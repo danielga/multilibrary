@@ -1,0 +1,13 @@
+#pragma once
+
+#include <MultiLibrary/Config.hpp>
+
+#if defined MULTILIBRARY_VISUAL_EXPORT
+
+	#define MULTILIBRARY_VISUAL_API MULTILIBRARY_API_EXPORT
+
+#else
+
+	#define MULTILIBRARY_VISUAL_API MULTILIBRARY_API_IMPORT
+
+#endif
