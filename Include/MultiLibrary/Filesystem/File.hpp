@@ -1,26 +1,67 @@
+/*************************************************************************
+ * MultiLibrary - danielga.bitbucket.org/multilibrary
+ * A C++ library that covers multiple low level systems.
+ *------------------------------------------------------------------------
+ * Copyright (c) 2014, Daniel Almeida
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *************************************************************************/
+
 #pragma once
 
 #include <MultiLibrary/Filesystem/Export.hpp>
 #include <MultiLibrary/Common/IOStream.hpp>
+#include <MultiLibrary/Common/Subscriber.hpp>
 #include <string>
+#include <set>
+#include <memory>
 
 namespace MultiLibrary
 {
 
 class FileInternal;
 
+/*!
+ \brief A class that represents a file.
+
+ It provides data streaming capabilities.
+ */
 class MULTILIBRARY_FILESYSTEM_API File : public IOStream
 {
 public:
 	File( FileInternal *file );
-	File( const File &f );
+
 	virtual ~File( );
 
-	typedef void ( *unspecified_bool_type ) ( );
-	static void unspecified_bool_true( );
-
 	bool IsValid( ) const;
-	operator unspecified_bool_type( ) const;
+	explicit operator bool( ) const;
 	bool operator!( ) const;
 
 	bool Close( );
@@ -75,10 +116,12 @@ public:
 	File &operator<<( const wchar_t *data );
 	File &operator<<( const std::wstring &data );
 
-	const FileInternal *GetInternal( ) const;
+	void Subscribe( Subscriber *base );
+	void Unsubscribe( Subscriber *base );
 
 protected:
-	FileInternal *file_pointer;
+	std::set<Subscriber *> attached_subscribers;
+	std::shared_ptr<FileInternal> file_internal;
 };
 
 } // namespace MultiLibrary

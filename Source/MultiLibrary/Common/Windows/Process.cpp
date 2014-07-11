@@ -1,5 +1,41 @@
-#define WIN32_LEAN_AND_MEAN
+/*************************************************************************
+ * MultiLibrary - danielga.bitbucket.org/multilibrary
+ * A C++ library that covers multiple low level systems.
+ *------------------------------------------------------------------------
+ * Copyright (c) 2014, Daniel Almeida
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *************************************************************************/
+
 #include <MultiLibrary/Common/Process.hpp>
+#include <MultiLibrary/Common/Unicode.hpp>
 #include <stdexcept>
 #include <windows.h>
 
@@ -15,8 +51,8 @@ class Pipe : public NonCopyable
 {
 public:
 	Pipe( ) :
-		read_handle( NULL ),
-		write_handle( NULL )
+		read_handle( nullptr ),
+		write_handle( nullptr )
 	{ }
 
 	~Pipe( )
@@ -26,36 +62,36 @@ public:
 
 	void Open( )
 	{
-		if( read_handle != NULL || write_handle != NULL )
+		if( read_handle != nullptr || write_handle != nullptr )
 			return;
 
 		SECURITY_ATTRIBUTES sa;
 		sa.nLength = static_cast<DWORD>( sizeof( SECURITY_ATTRIBUTES ) );
 		sa.bInheritHandle = TRUE;
-		sa.lpSecurityDescriptor = NULL;
+		sa.lpSecurityDescriptor = nullptr;
 		if( CreatePipe( &read_handle, &write_handle, &sa, 0 ) == FALSE )
 			throw std::runtime_error( "unable to create pipe" );
 	}
 
 	void CloseRead( )
 	{
-		if( read_handle != NULL )
+		if( read_handle != nullptr )
 		{
 			if( CloseHandle( read_handle ) == FALSE )
 				throw std::runtime_error( "unable to close pipe read handle" );
 
-			read_handle = NULL;
+			read_handle = nullptr;
 		}
 	}
 
 	void CloseWrite( )
 	{
-		if( write_handle != NULL )
+		if( write_handle != nullptr )
 		{
 			if( CloseHandle( write_handle ) == FALSE )
 				throw std::runtime_error( "unable to close pipe write handle" );
 
-			write_handle = NULL;
+			write_handle = nullptr;
 		}
 	}
 
@@ -90,13 +126,13 @@ public:
 protected:
 	virtual int_type underflow( )
 	{
-		if( pipe.Read( ) != NULL && gptr( ) == egptr( ) )
+		if( pipe.Read( ) != nullptr && gptr( ) == egptr( ) )
 		{
 			DWORD size = 0;
-			if( PeekNamedPipe( pipe.Read( ), NULL, 0, NULL, &size, NULL ) == FALSE || size == 0 )
+			if( PeekNamedPipe( pipe.Read( ), nullptr, 0, nullptr, &size, nullptr ) == FALSE || size == 0 )
 				return traits_type::eof( );
 
-			if( ReadFile( pipe.Read( ), stream_buffer, STREAM_BUFFER_SIZE, &size, NULL ) == FALSE || size == 0 )
+			if( ReadFile( pipe.Read( ), stream_buffer, STREAM_BUFFER_SIZE, &size, nullptr ) == FALSE || size == 0 )
 				return traits_type::eof( );
 
 			setg( stream_buffer, stream_buffer, stream_buffer + size );
@@ -123,10 +159,10 @@ public:
 protected:
 	virtual int sync( )
 	{
-		if( pipe.Write( ) != NULL && pbase( ) != pptr( ) )
+		if( pipe.Write( ) != nullptr && pbase( ) != pptr( ) )
 		{
 			DWORD size = static_cast<DWORD>( pptr( ) - pbase( ) ), written = 0;
-			if( WriteFile( pipe.Write( ), pbase( ), size, &written, NULL ) == TRUE && written == size )
+			if( WriteFile( pipe.Write( ), pbase( ), size, &written, nullptr ) == TRUE && written == size )
 			{
 				setp( stream_buffer, stream_buffer + STREAM_BUFFER_SIZE );
 				return 0;
@@ -152,10 +188,12 @@ private:
 	char stream_buffer[STREAM_BUFFER_SIZE];
 };
 
-struct Data : public NonCopyable
+} // namespace Internal
+
+struct Process::InternalData : public NonCopyable
 {
-	Data( ) :
-		handle( NULL ),
+	InternalData( ) :
+		handle( nullptr ),
 		input_streambuf( input_pipe ),
 		output_streambuf( output_pipe ),
 		error_streambuf( error_pipe ),
@@ -179,23 +217,21 @@ struct Data : public NonCopyable
 
 	HANDLE handle;
 
-	Pipe input_pipe;
-	Pipe output_pipe;
-	Pipe error_pipe;
+	Internal::Pipe input_pipe;
+	Internal::Pipe output_pipe;
+	Internal::Pipe error_pipe;
 
-	PipeWriteStream input_streambuf;
-	PipeReadStream output_streambuf;
-	PipeReadStream error_streambuf;
+	Internal::PipeWriteStream input_streambuf;
+	Internal::PipeReadStream output_streambuf;
+	Internal::PipeReadStream error_streambuf;
 
 	std::ostream input_stream;
 	std::istream output_stream;
 	std::istream error_stream;
 };
 
-} // namespace Internal
-
 Process::Process( ) :
-	process( NULL ),
+	process( nullptr ),
 	exit_code( 0 )
 { }
 
@@ -206,7 +242,7 @@ Process::~Process( )
 
 bool Process::Start( const std::string &path, const std::string &args )
 {
-	if( process != NULL )
+	if( process != nullptr )
 		return false;
 
 	std::string cmdline;
@@ -221,11 +257,14 @@ bool Process::Start( const std::string &path, const std::string &args )
 		cmdline += args;
 	}
 
-	process = new Internal::Data;
+	std::wstring widecmdline;
+	UTF16::FromUTF8( cmdline.begin( ), cmdline.end( ), std::back_inserter( widecmdline ) );
+
+	process = new InternalData;
 
 	STARTUPINFO startup;
-	memset( &startup, 0, sizeof( STARTUPINFO ) );
-	startup.cb = sizeof( STARTUPINFO );
+	ZeroMemory( &startup, sizeof( startup ) );
+	startup.cb = sizeof( startup );
 	startup.dwFlags = STARTF_USESTDHANDLES;
 	startup.hStdInput = process->input_pipe.Read( );
 	startup.hStdOutput = process->output_pipe.Write( );
@@ -233,7 +272,7 @@ bool Process::Start( const std::string &path, const std::string &args )
 
 	PROCESS_INFORMATION info;
 
-	if( CreateProcess( NULL, &cmdline[0], NULL, NULL, TRUE, 0, NULL, NULL, &startup, &info ) == TRUE )
+	if( CreateProcess( nullptr, &widecmdline[0], nullptr, nullptr, TRUE, 0, nullptr, nullptr, &startup, &info ) == TRUE )
 	{
 		if( CloseHandle( info.hThread ) == FALSE )
 			throw std::runtime_error( "unable to close thread handle" );
@@ -247,13 +286,13 @@ bool Process::Start( const std::string &path, const std::string &args )
 	}
 
 	delete process;
-	process = NULL;
+	process = nullptr;
 	return false;
 }
 
 bool Process::Start( const std::string &path, const std::vector<std::string> &args )
 {
-	if( process != NULL )
+	if( process != nullptr )
 		return false;
 
 	std::string targs;
@@ -274,17 +313,18 @@ bool Process::Start( const std::string &path, const std::vector<std::string> &ar
 	return Start( path, targs );
 }
 
-bool Process::Wait( const Time &timeout )
+bool Process::Wait( const std::chrono::microseconds &timeout )
 {
-	if( process == NULL )
+	if( process == nullptr )
 		return false;
 
-	return WaitForSingleObject( process->handle, static_cast<DWORD>( timeout.Milliseconds( ) ) ) == WAIT_OBJECT_0;
+	std::chrono::milliseconds millisecs = std::chrono::duration_cast<std::chrono::milliseconds>( timeout );
+	return WaitForSingleObject( process->handle, static_cast<DWORD>( millisecs.count( ) ) ) == WAIT_OBJECT_0;
 }
 
 bool Process::Close( )
 {
-	if( process == NULL )
+	if( process == nullptr )
 		return false;
 
 	CloseInput( );
@@ -301,7 +341,7 @@ bool Process::Close( )
 			throw std::runtime_error( "unable to close process handle" );
 
 		delete process;
-		process = NULL;
+		process = nullptr;
 		return true;
 	}
 
@@ -310,7 +350,7 @@ bool Process::Close( )
 
 void Process::Kill( )
 {
-	if( process == NULL )
+	if( process == nullptr )
 		return;
 
 	if( TerminateProcess( process->handle, 0 ) == FALSE || !Close( ) )
@@ -319,7 +359,7 @@ void Process::Kill( )
 
 void Process::CloseInput( )
 {
-	if( process != NULL && process->input_pipe.Write( ) != NULL )
+	if( process != nullptr && process->input_pipe.Write( ) != nullptr )
 	{
 		process->input_stream.flush( );
 		process->input_pipe.CloseWrite( );

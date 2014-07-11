@@ -1,3 +1,39 @@
+/*************************************************************************
+ * MultiLibrary - danielga.bitbucket.org/multilibrary
+ * A C++ library that covers multiple low level systems.
+ *------------------------------------------------------------------------
+ * Copyright (c) 2014, Daniel Almeida
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *************************************************************************/
+
 #include <MultiLibrary/Filesystem/File.hpp>
 #include <MultiLibrary/Filesystem/FileInternal.hpp>
 #include <cassert>
@@ -7,34 +43,24 @@ namespace MultiLibrary
 {
 
 File::File( FileInternal *file ) :
-	file_pointer( file )
-{
-	if( file != NULL )
-		file->AddReference( );
-}
-
-File::File( const File &f ) :
-	file_pointer( f.file_pointer )
-{
-	if( file_pointer != NULL )
-		file_pointer->AddReference( );
-}
+	file_internal( file )
+{ }
 
 File::~File( )
 {
-	Close( );
+	std::set<Subscriber *>::iterator it, end = attached_subscribers.end( );
+	for( it = attached_subscribers.begin( ); it != end; ++it )
+		( *it )->ResetPublisher( );
 }
-
-void File::unspecified_bool_true( ) { }
 
 bool File::IsValid( ) const
 {
-	return file_pointer != NULL && file_pointer->IsValid( );
+	return file_internal && file_internal->IsValid( );
 }
 
-File::operator unspecified_bool_type( ) const
+File::operator bool( ) const
 {
-	return IsValid( ) ? unspecified_bool_true : 0;
+	return IsValid( );
 }
 
 bool File::operator!( ) const
@@ -44,10 +70,9 @@ bool File::operator!( ) const
 
 bool File::Close( )
 {
-	if( file_pointer != NULL )
+	if( file_internal )
 	{
-		file_pointer->ReleaseReference( );
-		file_pointer = NULL;
+		file_internal.reset( );
 		return true;
 	}
 
@@ -56,8 +81,8 @@ bool File::Close( )
 
 const std::string &File::GetPath( ) const
 {
-	if( file_pointer != NULL )
-		return file_pointer->GetPath( );
+	if( file_internal )
+		return file_internal->GetPath( );
 
 	static const std::string invalid = "";
 	return invalid;
@@ -65,68 +90,68 @@ const std::string &File::GetPath( ) const
 
 int64_t File::Tell( ) const
 {
-	if( file_pointer != NULL )
-		return file_pointer->Tell( );
+	if( file_internal )
+		return file_internal->Tell( );
 
 	return 0;
 }
 
 int64_t File::Size( ) const
 {
-	if( file_pointer != NULL )
-		return file_pointer->Size( );
+	if( file_internal )
+		return file_internal->Size( );
 
 	return 0;
 }
 
 bool File::Seek( int64_t pos, SeekMode mode )
 {
-	if( file_pointer != NULL )
-		return file_pointer->Seek( pos, mode );
+	if( file_internal )
+		return file_internal->Seek( pos, mode );
 
 	return false;
 }
 
 bool File::Flush( )
 {
-	if( file_pointer != NULL )
-		return file_pointer->Flush( );
+	if( file_internal )
+		return file_internal->Flush( );
 
 	return false;
 }
 
 bool File::Errored( ) const
 {
-	if( file_pointer != NULL )
-		return file_pointer->Errored( );
+	if( file_internal )
+		return file_internal->Errored( );
 
 	return false;
 }
 
 bool File::EndOfFile( ) const
 {
-	if( file_pointer != NULL )
-		return file_pointer->EndOfFile( );
+	if( file_internal )
+		return file_internal->EndOfFile( );
 
 	return false;
 }
 
 size_t File::Read( void *data, size_t size )
 {
-	assert( data != NULL && size != 0 );
+	assert( data != nullptr && size != 0 );
 
-	if( file_pointer != NULL )
-		return file_pointer->Read( data, size );
+	if( file_internal )
+		return file_internal->Read( data, size );
 
 	return 0;
 }
 
 size_t File::Write( const void *data, size_t size )
 {
-	assert( data != NULL && size != 0 );
+	assert( data != nullptr && size != 0 );
 
-	if( file_pointer != NULL )
-		return file_pointer->Write( data, size );
+	if( file_internal )
+		return file_internal->Write( data, size );
 
 	return 0;
 }
@@ -241,7 +266,7 @@ File &File::operator>>( char &data )
 
 File &File::operator>>( char *data )
 {
-	assert( data != NULL );
+	assert( data != nullptr );
 
 	char ch = 0;
 	size_t offset = 0;
@@ -278,7 +303,7 @@ File &File::operator>>( wchar_t &data )
 
 File &File::operator>>( wchar_t *data )
 {
-	assert( data != NULL );
+	assert( data != nullptr );
 
 	wchar_t ch = 0;
 	size_t offset = 0;
@@ -394,9 +419,14 @@ File &File::operator<<( const std::wstring &data )
 	return *this;
 }
 
-const FileInternal *File::GetInternal( ) const
+void File::Subscribe( Subscriber *base )
 {
-	return file_pointer;
+	attached_subscribers.insert( base );
+}
+
+void File::Unsubscribe( Subscriber *base )
+{
+	attached_subscribers.erase( base );
 }
 
 } // namespace MultiLibrary

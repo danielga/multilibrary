@@ -1,3 +1,39 @@
+/*************************************************************************
+ * MultiLibrary - danielga.bitbucket.org/multilibrary
+ * A C++ library that covers multiple low level systems.
+ *------------------------------------------------------------------------
+ * Copyright (c) 2014, Daniel Almeida
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *************************************************************************/
+
 #include <MultiLibrary/Media/MediaDecoder.hpp>
 #include <MultiLibrary/Common/InputStream.hpp>
 extern "C"
@@ -13,21 +49,22 @@ namespace MultiLibrary
 {
 
 MediaDecoder::MediaDecoder( ) :
-	format_context( NULL ),
+	format_context( nullptr ),
 	decoding_mode( DECODEMODE_NONE ),
-	memory_buffer( NULL ),
+	memory_buffer( nullptr ),
 	memory_size( 0 ),
 	memory_pos( 0 ),
-	temp_memory( NULL ),
+	temp_memory( nullptr, av_free ),
+	input_stream( nullptr ),
 	audio_channels( 0 ),
 	audio_samplerate( 0 ),
-	audio_duration( 0.0f ),
+	audio_duration( std::chrono::microseconds::zero( ) ),
 	video_width( 0 ),
 	video_height( 0 ),
 	video_framerate( 0.0f ),
-	video_duration( 0.0f ),
-	swr_context( NULL ),
-	sws_context( NULL )
+	video_duration( std::chrono::microseconds::zero( ) ),
+	swr_context( nullptr ),
+	sws_context( nullptr )
 {
 	for( int32_t k = 0; k < STREAMTYPE_COUNT; ++k )
 		ignored_streams[k] = false;
@@ -59,16 +96,16 @@ bool MediaDecoder::Open( const void *buffer, size_t size )
 	memory_size = size;
 	memory_pos = 0;
 
-	if( ( format_context = avformat_alloc_context( ) ) == NULL )
+	if( ( format_context = avformat_alloc_context( ) ) == nullptr )
 	{
 		Close( );
 		return false;
 	}
 
-	temp_memory = static_cast<uint8_t *>( av_malloc( 8192 ) );
-	format_context->pb = avio_alloc_context( temp_memory, 8192, 0, this, &InternalMemoryRead, NULL, &InternalMemorySeek );
+	temp_memory.reset( reinterpret_cast<uint8_t *>( av_malloc( 8192 ) ) );
+	format_context->pb = avio_alloc_context( temp_memory.get( ), 8192, 0, this, &InternalMemoryRead, nullptr, &InternalMemorySeek );
 
-	if( format_context->pb == NULL )
+	if( format_context->pb == nullptr )
 	{
 		Close( );
 		return false;
@@ -83,18 +120,20 @@ bool MediaDecoder::Open( InputStream &in_stream )
 		return false;
 
 	decoding_mode = DECODEMODE_STREAM;
-	SetAttachment( &in_stream );
 
-	if( ( format_context = avformat_alloc_context( ) ) == NULL )
+	in_stream.Subscribe( this );
+	input_stream = &in_stream;
+
+	if( ( format_context = avformat_alloc_context( ) ) == nullptr )
 	{
 		Close( );
 		return false;
 	}
 
-	temp_memory = static_cast<uint8_t *>( av_malloc( 8192 ) );
-	format_context->pb = avio_alloc_context( temp_memory, 8192, 0, this, &InternalMemoryRead, NULL, &InternalMemorySeek );
+	temp_memory.reset( reinterpret_cast<uint8_t *>( av_malloc( 8192 ) ) );
+	format_context->pb = avio_alloc_context( temp_memory.get( ), 8192, 0, this, &InternalMemoryRead, nullptr, &InternalMemorySeek );
 
-	if( format_context->pb == NULL )
+	if( format_context->pb == nullptr )
 	{
 		Close( );
 		return false;
@@ -105,7 +144,7 @@ bool MediaDecoder::Open( InputStream &in_stream )
 
 bool MediaDecoder::IsOpen( ) const
 {
-	return format_context != NULL;
+	return format_context != nullptr;
 }
 
 bool MediaDecoder::Close( )
@@ -118,17 +157,17 @@ bool MediaDecoder::Close( )
 	for( uint32_t i = 0; i < format_context->nb_streams; i++ )
 	{
 		AVCodecContext *codec_context = format_context->streams[i]->codec;
-		if( codec_context != NULL && codec_context->codec != NULL )
+		if( codec_context != nullptr && codec_context->codec != nullptr )
 			avcodec_close( codec_context );
 	}
 
-	if( swr_context != NULL )
+	if( swr_context != nullptr )
 		swr_free( &swr_context );
 
-	if( sws_context != NULL )
+	if( sws_context != nullptr )
 	{
 		sws_freeContext( sws_context );
-		sws_context = NULL;
+		sws_context = nullptr;
 	}
 
 	if( decoding_mode == DECODEMODE_FILE )
@@ -138,31 +177,31 @@ bool MediaDecoder::Close( )
 	else if( decoding_mode != DECODEMODE_NONE )
 	{
 		av_free( format_context->pb );
-		format_context->pb = NULL;
+		format_context->pb = nullptr;
 
 		avformat_free_context( format_context );
-		format_context = NULL;
+		format_context = nullptr;
+	}
 
-		if( temp_memory != NULL )
-		{
-			av_free( temp_memory );
-			temp_memory = NULL;
-		}
+	if( input_stream != nullptr )
+	{
+		input_stream->Unsubscribe( this );
+		input_stream = nullptr;
 	}
 
 	decoding_mode = DECODEMODE_NONE;
-	memory_buffer = NULL;
+	memory_buffer = nullptr;
 	memory_size = 0;
 	memory_pos = 0;
 
 	audio_channels = 0;
 	audio_samplerate = 0;
-	audio_duration = 0.0f;
+	audio_duration = std::chrono::microseconds::zero( );
 
 	video_width = 0;
 	video_height = 0;
 	video_framerate = 0.0f;
-	video_duration = 0.0f;
+	video_duration = std::chrono::microseconds::zero( );
 
 	return true;
 }
@@ -187,8 +226,8 @@ const char *MediaDecoder::GetMetadata( const char *key )
 	if( !IsOpen( ) )
 		return 0;
 
-	AVDictionaryEntry *entry = av_dict_get( format_context->metadata, key, NULL, 0 );
-	return entry != NULL ? entry->value : NULL;
+	AVDictionaryEntry *entry = av_dict_get( format_context->metadata, key, nullptr, 0 );
+	return entry != nullptr ? entry->value : nullptr;
 }
 
 uint32_t MediaDecoder::GetChannelCount( ) const
@@ -201,7 +240,7 @@ uint32_t MediaDecoder::GetSampleRate( ) const
 	return audio_samplerate;
 }
 
-float MediaDecoder::GetAudioDuration( ) const
+std::chrono::microseconds MediaDecoder::GetAudioDuration( ) const
 {
 	return audio_duration;
 }
@@ -216,7 +255,7 @@ uint32_t MediaDecoder::GetHeight( ) const
 	return video_height;
 }
 
-float MediaDecoder::GetVideoDuration( ) const
+std::chrono::microseconds MediaDecoder::GetVideoDuration( ) const
 {
 	return video_duration;
 }
@@ -396,13 +435,13 @@ bool MediaDecoder::IsIgnoringStream( StreamType stream_type )
 bool MediaDecoder::InternalOpen( const std::string &filename )
 {
 	bool useful_stream = false;
-	if( avformat_open_input( &format_context, filename.c_str( ), NULL, NULL ) != 0 )
+	if( avformat_open_input( &format_context, filename.c_str( ), nullptr, nullptr ) != 0 )
 	{
 		Close( );
 		return false;
 	}
 
-	if( avformat_find_stream_info( format_context, NULL ) < 0 )
+	if( avformat_find_stream_info( format_context, nullptr ) < 0 )
 	{
 		Close( );
 		return false;
@@ -429,16 +468,16 @@ bool MediaDecoder::InternalOpen( const std::string &filename )
 
 				audio_samplerate = codec_context->sample_rate;
 
-				audio_duration = static_cast<float>( stream->duration * av_q2d( time_base ) );
+				audio_duration = std::chrono::microseconds( static_cast<int64_t>( stream->duration * av_q2d( time_base ) * 1000000 ) );
 
 				uint64_t channel_layout = codec_context->channel_layout;
 				if( channel_layout == 0 )
 					channel_layout = av_get_default_channel_layout( codec_context->channels );
 
-				swr_context = swr_alloc_set_opts( NULL,
+				swr_context = swr_alloc_set_opts( nullptr,
 					channel_layout, AV_SAMPLE_FMT_S16, codec_context->sample_rate,
 					channel_layout, codec_context->sample_fmt, codec_context->sample_rate,
-					0, NULL
+					0, nullptr
 				);
 
 				swr_init( swr_context );
@@ -449,20 +488,20 @@ bool MediaDecoder::InternalOpen( const std::string &filename )
 
 				video_height = codec_context->height;
 
-				video_duration = static_cast<float>( stream->duration * av_q2d( time_base ) );
+				video_duration = std::chrono::microseconds( static_cast<int64_t>( stream->duration * av_q2d( time_base ) * 1000000 ) );
 
 				if( stream->avg_frame_rate.num && stream->avg_frame_rate.den )
 					video_framerate = static_cast<float>( av_q2d( stream->avg_frame_rate ) );
 				else
 					video_framerate = 29.97f;
 
-				sws_context = sws_getCachedContext( NULL,
+				sws_context = sws_getContext( 
 					codec_context->width, codec_context->height, codec_context->pix_fmt,
 					codec_context->width, codec_context->height, AV_PIX_FMT_RGBA,
-					0, NULL, NULL, NULL
+					0, nullptr, nullptr, nullptr
 				);
 
-				sws_init_context( sws_context, NULL, NULL );
+				sws_init_context( sws_context, nullptr, nullptr );
 			}
 
 			useful_stream = true;
@@ -547,14 +586,13 @@ int MediaDecoder::InternalMemoryRead( void *opaque, uint8_t *buf, int buf_size )
 		size_t copy_size = static_cast<size_t>( buf_size );
 		if( remaining < copy_size )
 			copy_size = remaining;
-		memcpy( buf, &decoder->memory_buffer[decoder->memory_pos], copy_size );
+		std::memcpy( buf, &decoder->memory_buffer[decoder->memory_pos], copy_size );
 		decoder->memory_pos += copy_size;
 		return copy_size;
 	}
 	else if( decoder->decoding_mode == DECODEMODE_STREAM )
 	{
-		InputStream *stream = reinterpret_cast<InputStream *>( decoder->GetAttachment( ) );
-		return static_cast<int>( stream->Read( buf, buf_size ) );
+		return static_cast<int>( decoder->input_stream->Read( buf, buf_size ) );
 	}
 
 	return -1;
@@ -582,7 +620,7 @@ int64_t MediaDecoder::InternalMemorySeek( void *opaque, int64_t offset, int when
 	}
 	else if( decoder->decoding_mode == DECODEMODE_STREAM )
 	{
-		InputStream *stream = reinterpret_cast<InputStream *>( decoder->GetAttachment( ) );
+		InputStream *stream = decoder->input_stream;
 		if( whence == AVSEEK_SIZE )
 		{
 			return stream->Size( );
@@ -595,6 +633,15 @@ int64_t MediaDecoder::InternalMemorySeek( void *opaque, int64_t offset, int when
 	}
 
 	return -1;
+}
+
+void MediaDecoder::ResetPublisher( )
+{
+	if( input_stream != nullptr )
+	{
+		Close( );
+		input_stream = nullptr;
+	}
 }
 
 } // namespace MultiLibrary

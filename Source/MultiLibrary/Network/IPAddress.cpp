@@ -1,9 +1,44 @@
+/*************************************************************************
+ * MultiLibrary - danielga.bitbucket.org/multilibrary
+ * A C++ library that covers multiple low level systems.
+ *------------------------------------------------------------------------
+ * Copyright (c) 2014, Daniel Almeida
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *************************************************************************/
+
 #include <MultiLibrary/Network/IPAddress.hpp>
 #include <cstring>
 
 #if defined _WIN32
 
-	#define WIN32_LEAN_AND_MEAN
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
 	#define s6_addr16 _S6_un
@@ -21,9 +56,12 @@
 namespace MultiLibrary
 {
 
+namespace Internal
+{
+
 static const int __little_endian_t__ = 1;
 static const bool __little_endian__ = *reinterpret_cast<const char *>( &__little_endian_t__ ) == 1;
-template<typename T> void NetworkCopy( T *dst, const T *src, size_t len )
+template<typename T> static void NetworkCopy( T *dst, const T *src, size_t len )
 {
 	const uint8_t *source = reinterpret_cast<const uint8_t *>( src );
 	uint8_t *destination = reinterpret_cast<uint8_t *>( dst );
@@ -36,15 +74,17 @@ template<typename T> void NetworkCopy( T *dst, const T *src, size_t len )
 		std::memcpy( destination, source, bytes );
 }
 
+} // namespace Internal
+
 IPAddress::IPAddress( IPAddressFamily family ) :
-	host_address( NULL )
+	host_address( nullptr )
 {
 	InitializeAddress( );
 	SetFamily( family );
 }
 
 IPAddress::IPAddress( const std::string &address, uint16_t port ) :
-	host_address( NULL )
+	host_address( nullptr )
 {
 	InitializeAddress( );
 	ResolveString( address );
@@ -52,14 +92,14 @@ IPAddress::IPAddress( const std::string &address, uint16_t port ) :
 }
 
 IPAddress::IPAddress( const sockaddr_in &address ) :
-	host_address( NULL )
+	host_address( nullptr )
 {
 	InitializeAddress( );
 	SetIPAddress( address );
 }
 
 IPAddress::IPAddress( uint32_t address, uint16_t port ) :
-	host_address( NULL )
+	host_address( nullptr )
 {
 	InitializeAddress( );
 	SetAddress( address );
@@ -67,7 +107,7 @@ IPAddress::IPAddress( uint32_t address, uint16_t port ) :
 }
 
 IPAddress::IPAddress( const uint8_t address[4], uint16_t port ) :
-	host_address( NULL )
+	host_address( nullptr )
 {
 	InitializeAddress( );
 	SetAddress( address );
@@ -75,14 +115,14 @@ IPAddress::IPAddress( const uint8_t address[4], uint16_t port ) :
 }
 
 IPAddress::IPAddress( const sockaddr_in6 &address ) :
-	host_address( NULL )
+	host_address( nullptr )
 {
 	InitializeAddress( );
 	SetIPAddress( address );
 }
 
 IPAddress::IPAddress( const uint16_t address[8], uint16_t port ) :
-	host_address( NULL )
+	host_address( nullptr )
 {
 	InitializeAddress( );
 	SetAddress( address );
@@ -134,7 +174,7 @@ void IPAddress::SetAddress( const uint16_t address[8] )
 {
 	SetFamily( FAMILY_INET6 );
 	sockaddr_in6 *haddress = reinterpret_cast<sockaddr_in6 *>( host_address );
-	NetworkCopy( reinterpret_cast<uint16_t *>( &haddress->sin6_addr.s6_addr16 ), address, 8 );
+	Internal::NetworkCopy( reinterpret_cast<uint16_t *>( &haddress->sin6_addr.s6_addr16 ), address, 8 );
 }
 
 void IPAddress::SetPort( uint16_t port )
@@ -159,13 +199,13 @@ uint32_t IPAddress::GetAddress( ) const
 void IPAddress::GetAddress( uint8_t address[4] ) const
 {
 	sockaddr_in *haddress = reinterpret_cast<sockaddr_in *>( host_address );
-	NetworkCopy( address, reinterpret_cast<uint8_t *>( haddress->sin_addr.s_addr ), 4 );
+	Internal::NetworkCopy( address, reinterpret_cast<uint8_t *>( haddress->sin_addr.s_addr ), 4 );
 }
 
 void IPAddress::GetAddress( uint16_t address[8] ) const
 {
 	sockaddr_in6 *haddress = reinterpret_cast<sockaddr_in6 *>( host_address );
-	NetworkCopy( address, reinterpret_cast<uint16_t *>( &haddress->sin6_addr.s6_addr16 ), 8 );
+	Internal::NetworkCopy( address, reinterpret_cast<uint16_t *>( &haddress->sin6_addr.s6_addr16 ), 8 );
 }
 
 unsigned short IPAddress::GetPort( ) const
@@ -215,8 +255,18 @@ std::string IPAddress::ToString( ) const
 		{
 			address.resize( INET_ADDRSTRLEN );
 
+#if defined _WIN32
+
+			DWORD size = INET_ADDRSTRLEN;
+			if( WSAAddressToStringA( reinterpret_cast<sockaddr *>( host_address ), sizeof( sockaddr_in ), nullptr, &address[0], &size ) == 0 )
+
+#elif defined __APPLE__ || defined __linux
+
 			in_addr *haddress = &reinterpret_cast<sockaddr_in *>( host_address )->sin_addr;
-			if( inet_ntop( AF_INET, haddress, &address[0], INET_ADDRSTRLEN ) != NULL )
+			if( inet_ntop( AF_INET, haddress, &address[0], INET_ADDRSTRLEN ) != nullptr )
+
+#endif
+
 			{
 				address.resize( strlen( address.c_str( ) ) );
 				return address;
@@ -229,8 +279,18 @@ std::string IPAddress::ToString( ) const
 		{
 			address.resize( INET6_ADDRSTRLEN );
 
+#if defined _WIN32
+
+			DWORD size = INET6_ADDRSTRLEN;
+			if( WSAAddressToStringA( reinterpret_cast<sockaddr *>( host_address ), sizeof( sockaddr_in6 ), nullptr, &address[0], &size ) == 0 )
+
+#elif defined __APPLE__ || defined __linux
+
 			in6_addr *haddress = &reinterpret_cast<sockaddr_in6 *>( host_address )->sin6_addr;
-			if( inet_ntop( AF_INET6, haddress, &address[0], INET6_ADDRSTRLEN ) != NULL )
+			if( inet_ntop( AF_INET6, haddress, &address[0], INET6_ADDRSTRLEN ) != nullptr )
+
+#endif
+
 			{
 				address.resize( strlen( address.c_str( ) ) );
 				return address;
@@ -262,8 +322,21 @@ void IPAddress::InitializeAddress( )
 
 bool IPAddress::ResolveString( const std::string &address )
 {
+
+#if defined _WIN32
+
+	sockaddr_in sock_addr;
+	in_addr &addr = sock_addr.sin_addr;
+	int size = sizeof( sock_addr );
+	if( WSAStringToAddressA( const_cast<char *>( address.c_str( ) ), AF_INET, nullptr, reinterpret_cast<sockaddr *>( &sock_addr ), &size ) == 0 )
+
+#elif defined __APPLE__ || defined __linux
+
 	in_addr addr;
 	if( inet_pton( AF_INET, address.c_str( ), &addr ) == 1 )
+
+#endif
+
 	{
 		// Doesn't call SetAddress because it does byte order stuff and we don't need it.
 		SetFamily( FAMILY_INET );
@@ -271,8 +344,20 @@ bool IPAddress::ResolveString( const std::string &address )
 		return true;
 	}
 
+#if defined _WIN32
+
+	sockaddr_in6 sock_addr6;
+	in6_addr &addr6 = sock_addr6.sin6_addr;
+	size = sizeof( sock_addr6 );
+	if( WSAStringToAddressA( const_cast<char *>( address.c_str( ) ), AF_INET6, nullptr, reinterpret_cast<sockaddr *>( &sock_addr6 ), &size ) == 0 )
+
+#elif defined __APPLE__ || defined __linux
+
 	in6_addr addr6;
 	if( inet_pton( AF_INET6, address.c_str( ), &addr6 ) == 1 )
+
+#endif
+
 	{
 		// Doesn't call SetAddress because it does byte order stuff and we don't need it.
 		SetFamily( FAMILY_INET6 );
@@ -286,7 +371,7 @@ bool IPAddress::ResolveString( const std::string &address )
 	addrinfo hints;
 	std::memset( &hints, 0, sizeof( hints ) );
 	hints.ai_family = AF_INET;
-	if( getaddrinfo( address.c_str( ), NULL, &hints, &result ) == 0 && result != NULL )
+	if( getaddrinfo( address.c_str( ), nullptr, &hints, &result ) == 0 && result != nullptr )
 	{
 		// Doesn't call SetAddress because it does byte order stuff and we don't need it.
 		SetFamily( FAMILY_INET );
@@ -295,14 +380,14 @@ bool IPAddress::ResolveString( const std::string &address )
 		haddress->sin_addr.s_addr = raddress->sin_addr.s_addr;
 
 		freeaddrinfo( result );
-		result = NULL;
+		result = nullptr;
 		return true;
 	}
 
 	addrinfo hints6;
 	std::memset( &hints6, 0, sizeof( hints6 ) );
 	hints6.ai_family = AF_INET6;
-	if( getaddrinfo( address.c_str( ), NULL, &hints6, &result ) == 0 && result != NULL )
+	if( getaddrinfo( address.c_str( ), nullptr, &hints6, &result ) == 0 && result != nullptr )
 	{
 		// Doesn't call SetAddress because it does byte order stuff and we don't need it.
 		SetFamily( FAMILY_INET6 );
@@ -311,7 +396,7 @@ bool IPAddress::ResolveString( const std::string &address )
 		std::memcpy( haddress, raddress, 16 );
 
 		freeaddrinfo( result );
-		result = NULL;
+		result = nullptr;
 		return true;
 	}
 

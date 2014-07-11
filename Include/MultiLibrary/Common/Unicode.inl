@@ -1,13 +1,46 @@
+/*************************************************************************
+ * MultiLibrary - danielga.bitbucket.org/multilibrary
+ * A C++ library that covers multiple low level systems.
+ *------------------------------------------------------------------------
+ * Copyright (c) 2014, Daniel Almeida
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *************************************************************************/
+
 namespace UTF8
 {
 
 template<typename Input>
-Input Decode( Input begin, Input end, uint32_t &output, uint32_t replace )
+static Input Decode( Input begin, Input end, uint32_t &output, uint32_t replace )
 {
-	static const uint32_t offsets[6] =
-	{
-		0x00000000, 0x00003080, 0x000E2080, 0x03C82080, 0xFA082080, 0x82082080
-	};
+	static const uint32_t offsets[6] = { 0x00000000, 0x00003080, 0x000E2080, 0x03C82080, 0xFA082080, 0x82082080 };
 
 	uint8_t ch = static_cast<uint8_t>( *begin );
 	int trailingBytes = 0;
@@ -71,12 +104,9 @@ Input Decode( Input begin, Input end, uint32_t &output, uint32_t replace )
 }
 
 template<typename Output>
-Output Encode( uint32_t input, Output output, uint8_t replace )
+static Output Encode( uint32_t input, Output output, uint8_t replace )
 {
-	static const uint8_t firstBytes[7] =
-	{
-		0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC
-	};
+	static const uint8_t firstBytes[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
 
 	if( input > 0x0010FFFF || ( input >= 0xD800 && input <= 0xDBFF ) )
 	{
@@ -124,14 +154,14 @@ Output Encode( uint32_t input, Output output, uint8_t replace )
 }
 
 template<typename Input>
-Input Next( Input begin, Input end )
+static Input Next( Input begin, Input end )
 {
 	uint32_t codepoint;
 	return Decode( begin, end, codepoint );
 }
 
 template<typename Input>
-size_t Length( Input begin, Input end )
+static size_t Length( Input begin, Input end )
 {
 	size_t length = 0;
 	while( begin < end )
@@ -144,7 +174,22 @@ size_t Length( Input begin, Input end )
 }
 
 template<typename Input, typename Output>
-Output FromWideString( Input begin, Input end, Output out )
+static Output FromANSI( Input begin, Input end, Output out, const std::locale &loc )
+{
+	const std::ctype<wchar_t> &facet = std::use_facet<std::ctype<wchar_t>>( loc );
+	uint32_t codepoint;
+	while( begin != end )
+	{
+		codepoint = facet.widen( *begin );
+		++begin;
+		out = Encode( codepoint, out );
+	}
+
+	return out;
+}
+
+template<typename Input, typename Output>
+static Output FromWideString( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -171,7 +216,7 @@ Output FromWideString( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output FromUTF16( Input begin, Input end, Output out )
+static Output FromUTF16( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -184,7 +229,7 @@ Output FromUTF16( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output FromUTF32( Input begin, Input end, Output out )
+static Output FromUTF32( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -197,7 +242,22 @@ Output FromUTF32( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output ToWideString( Input begin, Input end, Output out, wchar_t replace )
+static Output ToANSI( Input begin, Input end, Output out, char replace, const std::locale &loc )
+{
+	const std::ctype<wchar_t> &facet = std::use_facet<std::ctype<wchar_t>>( loc );
+	uint32_t codepoint;
+	while( begin != end )
+	{
+		begin = Decode( begin, end, codepoint );
+		*out = facet.narrow( static_cast<wchar_t>( codepoint ), replace );
+		++out;
+	}
+
+	return out;
+}
+
+template<typename Input, typename Output>
+static Output ToWideString( Input begin, Input end, Output out, wchar_t replace )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -224,7 +284,7 @@ Output ToWideString( Input begin, Input end, Output out, wchar_t replace )
 }
 
 template<typename Input, typename Output>
-Output ToUTF16( Input begin, Input end, Output out )
+static Output ToUTF16( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -237,7 +297,7 @@ Output ToUTF16( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output ToUTF32( Input begin, Input end, Output out )
+static Output ToUTF32( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -255,7 +315,7 @@ namespace UTF16
 {
 
 template<typename Input>
-Input Decode( Input begin, Input end, uint32_t &output, uint32_t replace )
+static Input Decode( Input begin, Input end, uint32_t &output, uint32_t replace )
 {
 	uint16_t first = *begin;
 	++begin;
@@ -286,7 +346,7 @@ Input Decode( Input begin, Input end, uint32_t &output, uint32_t replace )
 }
 
 template<typename Output>
-Output Encode( uint32_t input, Output output, uint16_t replace )
+static Output Encode( uint32_t input, Output output, uint16_t replace )
 {
 	if( input < 0xFFFF )
 	{
@@ -325,14 +385,14 @@ Output Encode( uint32_t input, Output output, uint16_t replace )
 }
 
 template<typename Input>
-Input Next( Input begin, Input end )
+static Input Next( Input begin, Input end )
 {
 	uint32_t codepoint;
 	return Decode( begin, end, codepoint );
 }
 
 template<typename Input>
-size_t Length( Input begin, Input end )
+static size_t Length( Input begin, Input end )
 {
 	size_t length = 0;
 	while( begin < end )
@@ -345,7 +405,22 @@ size_t Length( Input begin, Input end )
 }
 
 template<typename Input, typename Output>
-Output FromWideString( Input begin, Input end, Output out )
+static Output FromANSI( Input begin, Input end, Output out, const std::locale &loc )
+{
+	const std::ctype<wchar_t> &facet = std::use_facet<std::ctype<wchar_t>>( loc );
+	uint32_t codepoint;
+	while( begin != end )
+	{
+		codepoint = facet.widen( *begin );
+		++begin;
+		out = Encode( codepoint, out );
+	}
+
+	return out;
+}
+
+template<typename Input, typename Output>
+static Output FromWideString( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -372,7 +447,7 @@ Output FromWideString( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output FromUTF8( Input begin, Input end, Output out )
+static Output FromUTF8( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -385,7 +460,7 @@ Output FromUTF8( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output FromUTF32( Input begin, Input end, Output out )
+static Output FromUTF32( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -398,7 +473,22 @@ Output FromUTF32( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output ToWideString( Input begin, Input end, Output out, wchar_t replace )
+static Output ToANSI( Input begin, Input end, Output out, char replace, const std::locale &loc )
+{
+	const std::ctype<wchar_t> &facet = std::use_facet<std::ctype<wchar_t>>( loc );
+	uint32_t codepoint;
+	while( begin != end )
+	{
+		begin = Decode( begin, end, codepoint );
+		*out = facet.narrow( static_cast<wchar_t>( codepoint ), replace );
+		++out;
+	}
+
+	return out;
+}
+
+template<typename Input, typename Output>
+static Output ToWideString( Input begin, Input end, Output out, wchar_t replace )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -425,7 +515,7 @@ Output ToWideString( Input begin, Input end, Output out, wchar_t replace )
 }
 
 template<typename Input, typename Output>
-Output ToUTF8( Input begin, Input end, Output out )
+static Output ToUTF8( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -438,7 +528,7 @@ Output ToUTF8( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output ToUTF32( Input begin, Input end, Output out )
+static Output ToUTF32( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -456,33 +546,48 @@ namespace UTF32
 {
 
 template<typename Input>
-Input Decode( Input begin, Input end, uint32_t &output, uint32_t replace )
+static Input Decode( Input begin, Input end, uint32_t &output, uint32_t replace )
 {
 	output = *begin;
 	return ++begin;
 }
 
 template<typename Output>
-Output Encode( uint32_t input, Output output, uint32_t replace )
+static Output Encode( uint32_t input, Output output, uint32_t )
 {
 	*output = input;
 	return ++output;
 }
 
 template<typename Input>
-Input Next( Input begin, Input end )
+static Input Next( Input begin, Input end )
 {
 	return ++begin;
 }
 
 template<typename Input>
-size_t Length( Input begin, Input end )
+static size_t Length( Input begin, Input end )
 {
 	return begin - end;
 }
 
 template<typename Input, typename Output>
-Output FromWideString( Input begin, Input end, Output out )
+static Output FromANSI( Input begin, Input end, Output out, const std::locale &loc )
+{
+	const std::ctype<wchar_t> &facet = std::use_facet<std::ctype<wchar_t>>( loc );
+	uint32_t codepoint;
+	while( begin != end )
+	{
+		codepoint = facet.widen( *begin );
+		++begin;
+		out = Encode( codepoint, out );
+	}
+
+	return out;
+}
+
+template<typename Input, typename Output>
+static Output FromWideString( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -509,7 +614,7 @@ Output FromWideString( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output FromUTF8( Input begin, Input end, Output out )
+static Output FromUTF8( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -522,7 +627,7 @@ Output FromUTF8( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output FromUTF16( Input begin, Input end, Output out )
+static Output FromUTF16( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -535,7 +640,22 @@ Output FromUTF16( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output ToWideString( Input begin, Input end, Output out, wchar_t replace )
+static Output ToANSI( Input begin, Input end, Output out, char replace, const std::locale &loc )
+{
+	const std::ctype<wchar_t> &facet = std::use_facet<std::ctype<wchar_t>>( loc );
+	uint32_t codepoint;
+	while( begin != end )
+	{
+		begin = Decode( begin, end, codepoint );
+		*out = facet.narrow( static_cast<wchar_t>( codepoint ), replace );
+		++out;
+	}
+
+	return out;
+}
+
+template<typename Input, typename Output>
+static Output ToWideString( Input begin, Input end, Output out, wchar_t replace )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -562,7 +682,7 @@ Output ToWideString( Input begin, Input end, Output out, wchar_t replace )
 }
 
 template<typename Input, typename Output>
-Output ToUTF8( Input begin, Input end, Output out )
+static Output ToUTF8( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )
@@ -575,7 +695,7 @@ Output ToUTF8( Input begin, Input end, Output out )
 }
 
 template<typename Input, typename Output>
-Output ToUTF16( Input begin, Input end, Output out )
+static Output ToUTF16( Input begin, Input end, Output out )
 {
 	uint32_t codepoint;
 	while( begin != end )

@@ -1,7 +1,43 @@
+/*************************************************************************
+ * MultiLibrary - danielga.bitbucket.org/multilibrary
+ * A C++ library that covers multiple low level systems.
+ *------------------------------------------------------------------------
+ * Copyright (c) 2014, Daniel Almeida
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *************************************************************************/
+
 #include <MultiLibrary/Common/ByteBuffer.hpp>
+#include <MultiLibrary/Common/String.hpp>
 #include <MultiLibrary/Common/Unicode.hpp>
 #include <MultiLibrary/Common/Stopwatch.hpp>
-#include <MultiLibrary/Common/Thread.hpp>
 #include <MultiLibrary/Common/Process.hpp>
 
 #include <MultiLibrary/Common/Vector2.hpp>
@@ -10,7 +46,6 @@
 
 #include <MultiLibrary/Filesystem/Filesystem.hpp>
 #include <MultiLibrary/Filesystem/File.hpp>
-#include <MultiLibrary/Filesystem/FilePack.hpp>
 
 #include <MultiLibrary/Media/AudioDevice.hpp>
 #include <MultiLibrary/Media/SoundBuffer.hpp>
@@ -22,14 +57,14 @@
 #include <MultiLibrary/Network/FTP.hpp>
 
 #include <MultiLibrary/Window/Window.hpp>
-#include <MultiLibrary/Window/Context.hpp>
 
 #include <MultiLibrary/OpenGL.hpp>
 #include <MultiLibrary/Visual/Matrix2x2.hpp>
 
 #include <iostream>
+#include <thread>
 
-void TestSockets( )
+static void TestSockets( )
 {
 	std::cout << ML::IPAddress( "google.com", 80 ).ToString( ) << "\n";
 
@@ -62,7 +97,7 @@ void TestSockets( )
 		std::cout << "Not valid\n";
 }
 
-void TestStrings( )
+static void TestStrings( )
 {
 	std::string str = "κόσμε";
 	std::cout << str.length( ) << " " << ML::UTF8::Length( str.begin( ), str.end( ) ) << "\n";
@@ -76,53 +111,42 @@ void TestStrings( )
 	ML::UTF8::FromWideString( wstr.begin( ), wstr.end( ), std::back_inserter( bstr ) );
 
 	std::cout << str << " " << wstr.c_str( ) << " " << bstr.c_str( ) << "\n";
+
+	std::string str2 = "this/is/a/filepath.xml";
+	std::string wild = "this/is/*";
+	if( ML::String::WildcardCompare( str2, wild ) )
+		std::cout << "lol\n";
 }
 
-void TestFilesystem( )
+static void TestFilesystem( )
 {
 	ML::Filesystem fs;
 	ML::File file1 = fs.Open( "D:\\Programming\\MultiLibrary\\file.pak", "wb" );
-	file1.Write( "FILEPACK001", 11 );
-	unsigned long long data = 42ULL;
-	file1.Write( &data, sizeof( data ) );
-	data = 11ULL;
-	file1.Write( &data, sizeof( data ) );
-	unsigned char size = 6;
-	file1.Write( &size, 1 );
-	file1.Write( "fatman", 6 );
-	data = 0ULL;
-	file1.Write( &data, sizeof( data ) );
-	file1.Write( "JUNGCHOI123", 11 );
 	file1.Close( );
-
-	ML::FilePack file2 = fs.Open( "D:\\Programming\\MultiLibrary\\file.pak", "rb+" );
-	ML::File file3 = file2.Open( "fatman", "r+" );
-	std::string str( 11, '\0' );
-	file3.Read( &str[0], 11 );
-	std::cout << str << "\n";
-	file3.Seek( 0 );
-	file3.Write( "JUNGCHOI321BOOM", 15 );
-	file3.Flush( );
-	file3.Close( );
-	file2.Close( );
 
 	std::cout << ML::Filesystem::GetExecutablePath( ) << "\n";
 }
 
-void TestAudio( )
+static void TestAudio( )
 {
 	ML::AudioDevice device;
 
-	ML::Music music;
-	music.Open( "some_music.mp3" );
-	music.Play( );
+	ML::Sound sound;
+	{
+		ML::SoundBuffer buffer;
+		buffer.Load( "some_music.mp3" );
 
-	ML::CurrentThread::Sleep( ML::Seconds( 100 ) );
+		sound.SetBuffer( buffer );
+		sound.Play( );
+
+		std::this_thread::sleep_for( std::chrono::seconds( 5 ) );
+	}
 }
 
-void *ThreadFunction( ML::Window window )
+static void ThreadFunction( std::reference_wrapper<ML::Window> win )
 {
-	ML::Context current( window );
+	ML::Window &window = win;
+	window.SetActive( );
 
 	// Set the color and depth clear values
 	glClearDepth( 1.0f );
@@ -205,7 +229,7 @@ void *ThreadFunction( ML::Window window )
 	ML::Stopwatch clock;
 	clock.Resume( );
 
-	while( window.IsValid( ) )
+	while( window.IsValid( ) && !window.ShouldClose( ) )
 	{
 		// Clear the color and depth buffers
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -223,31 +247,23 @@ void *ThreadFunction( ML::Window window )
 
 		window.SwapBuffers( );
 	}
-
-	return NULL;
 }
 
-void TestWindow( )
+static void TestWindow( )
 {
-	ML::Matrix2x2f mat( 2, 5, 3, 1 );
-	mat *= 1;
-
-	ML::Window window( ML::VideoMode( 640, 480 ), "Test Window", ML::WindowSettings( true, false, true ), ML::ContextSettings( 4 ) );
+	ML::Window window( ML::VideoMode( 600, 400 ), "Tëst wíndow", ML::WindowSettings( true, false, true ), ML::ContextSettings( 8 ) );
 	window.SetPosition( ML::Vector2i( 50, 50 ) );
+	window.SetVisible( true );
 
-	ML::Thread thread( &ThreadFunction, window );
-	thread.Launch( );
+	std::thread thread( &ThreadFunction, std::ref( window ) );
 
-	while( window.IsValid( ) )
-	{
+	while( window.IsValid( ) && !window.ShouldClose( ) )
 		ML::Window::PollEvents( );
 
-		if( window.ShouldClose( ) )
-			window.Close( );
-	}
+	thread.join( );
 }
 
-void TestProcess( )
+static void TestProcess( )
 {
 	ML::Process process;
 	if( !process.Start( "child.exe" ) )
@@ -257,14 +273,14 @@ void TestProcess( )
 	process.CloseInput( );
 
 	std::string str;
-	while( !process.Wait( ML::Microseconds( 0 ) ) )
+	while( !process.Wait( std::chrono::microseconds::zero( ) ) )
 	{
 		if( std::getline( process.Output( ), str ).good( ) )
 			std::cout << str.substr( 0, str.size( ) - 1 ) << '\n';
 		else
 			process.Output( ).clear( );
 
-		ML::CurrentThread::Sleep( ML::Milliseconds( 10 ) );
+		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
 	}
 
 	// after process exits, keep chugging at the output
@@ -278,7 +294,7 @@ int main( int, char *[] )
 	//TestStrings( );
 	//TestFilesystem( );
 	//TestAudio( );
-	//TestWindow( );
-	TestProcess( );
+	TestWindow( );
+	//TestProcess( );
 	return 0;
 }

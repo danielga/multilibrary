@@ -1,3 +1,39 @@
+/*************************************************************************
+ * MultiLibrary - danielga.bitbucket.org/multilibrary
+ * A C++ library that covers multiple low level systems.
+ *------------------------------------------------------------------------
+ * Copyright (c) 2014, Daniel Almeida
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *************************************************************************/
+
 #include <MultiLibrary/Media/SoundBuffer.hpp>
 #include <MultiLibrary/Media/AudioDevice.hpp>
 #include <MultiLibrary/Media/MediaDecoder.hpp>
@@ -13,6 +49,10 @@ SoundBuffer::SoundBuffer( )
 
 SoundBuffer::~SoundBuffer( )
 {
+	std::set<Subscriber *>::iterator it, end = attached_subscribers.end( );
+	for( it = attached_subscribers.begin( ); it != end; ++it )
+		( *it )->ResetPublisher( );
+
 	alCheck( alDeleteBuffers( 1, &buffer_id ) );
 }
 
@@ -99,7 +139,7 @@ uint32_t SoundBuffer::GetChannelCount( ) const
 	return channelCount;
 }
 
-Time SoundBuffer::GetDuration( ) const
+std::chrono::microseconds SoundBuffer::GetDuration( ) const
 {
 	return buffer_duration;
 }
@@ -113,11 +153,11 @@ bool SoundBuffer::Initialize( MediaDecoder &file )
 {
 	uint32_t channel_count = file.GetChannelCount( );
 	uint32_t samplerate = file.GetSampleRate( );
-	float duration = file.GetAudioDuration( );
+	std::chrono::microseconds duration = file.GetAudioDuration( );
 
 	// This allocates a pretty close amount of memory to
 	// the one required for all the samples in the file
-	samples_buffer.reserve( static_cast<size_t>( duration * samplerate * channel_count ) );
+	samples_buffer.reserve( static_cast<size_t>( duration.count( ) / 1000000.0 * samplerate * channel_count ) );
 
 	AudioFrame frame;
 	while( file.ReadAudio( frame ) )
@@ -142,12 +182,21 @@ bool SoundBuffer::Update( uint32_t channels, uint32_t samplerate )
 	ALsizei bytes_count = static_cast<ALsizei>( samples_buffer.size( ) * sizeof( int16_t ) );
 	alCheck( alBufferData( buffer_id, format, &samples_buffer[0], bytes_count, samplerate ) );
 
-	buffer_duration = Seconds( static_cast<float>( samples_buffer.size( ) ) / samplerate / channels );
+	buffer_duration = std::chrono::microseconds( static_cast<int64_t>( samples_buffer.size( ) * 1000000.0 / samplerate / channels ) );
 
-	samples_buffer.clear( );
 	std::vector<int16_t>( ).swap( samples_buffer );
 
 	return true;
+}
+
+void SoundBuffer::Subscribe( Subscriber *base )
+{
+	attached_subscribers.insert( base );
+}
+
+void SoundBuffer::Unsubscribe( Subscriber *base )
+{
+	attached_subscribers.erase( base );
 }
 
 } // namespace MultiLibrary

@@ -1,9 +1,44 @@
+/*************************************************************************
+ * MultiLibrary - danielga.bitbucket.org/multilibrary
+ * A C++ library that covers multiple low level systems.
+ *------------------------------------------------------------------------
+ * Copyright (c) 2014, Daniel Almeida
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *************************************************************************/
+
 #include <MultiLibrary/Network/Socket.hpp>
 #include <MultiLibrary/Common/ByteBuffer.hpp>
 
 #if defined _WIN32
 
-	#define WIN32_LEAN_AND_MEAN
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
 	#include <stdexcept>
@@ -179,7 +214,7 @@ SocketError Socket::Receive( void *buffer, int size, int flags, int *received_by
 		return ENOTSOCK;
 
 	int ret = recv( socket_id, static_cast<char *>( buffer ), size, flags );
-	if( ret != SOCKET_ERROR && received_bytes != NULL )
+	if( ret != SOCKET_ERROR && received_bytes != nullptr )
 		*received_bytes = ret;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
@@ -209,7 +244,7 @@ SocketError Socket::ReceiveFrom( void *buffer, int size, int flags, IPAddress &a
 	socklen_t addr_size = address.GetAddressSize( );
 
 	int ret = recvfrom( socket_id, static_cast<char *>( buffer ), size, flags, addr, &addr_size );
-	if( ret != SOCKET_ERROR && received_bytes != NULL )
+	if( ret != SOCKET_ERROR && received_bytes != nullptr )
 		*received_bytes = ret;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
@@ -268,7 +303,7 @@ SocketError Socket::Send( const void *buffer, int size, int flags, int *sent_byt
 		return ENOTSOCK;
 
 	int ret = send( socket_id, static_cast<const char *>( buffer ), size, flags );
-	if( ret != SOCKET_ERROR && sent_bytes != NULL )
+	if( ret != SOCKET_ERROR && sent_bytes != nullptr )
 		*sent_bytes = ret;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
@@ -282,7 +317,7 @@ SocketError Socket::Send( const ByteBuffer &buffer, int flags, int *sent_bytes )
 	const char *buf = reinterpret_cast<const char *>( buffer.GetBuffer( ) );
 
 	int ret = send( socket_id, buf, static_cast<int>( buffer.Size( ) ), flags );
-	if( ret != SOCKET_ERROR && sent_bytes != NULL )
+	if( ret != SOCKET_ERROR && sent_bytes != nullptr )
 		*sent_bytes = ret;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
@@ -297,7 +332,7 @@ SocketError Socket::SendTo( const void *buffer, int size, int flags, const IPAdd
 	socklen_t addr_size = address.GetAddressSize( );
 
 	int ret = sendto( socket_id, static_cast<const char *>( buffer ), size, flags, addr, addr_size );
-	if( ret != SOCKET_ERROR && sent_bytes != NULL )
+	if( ret != SOCKET_ERROR && sent_bytes != nullptr )
 		*sent_bytes = ret;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
@@ -313,7 +348,7 @@ SocketError Socket::SendTo( const ByteBuffer &buffer, int flags, const IPAddress
 	socklen_t addr_size = address.GetAddressSize( );
 
 	int ret = sendto( socket_id, buf, static_cast<int>( buffer.Size( ) ), flags, addr, addr_size );
-	if( ret != SOCKET_ERROR && sent_bytes != NULL )
+	if( ret != SOCKET_ERROR && sent_bytes != nullptr )
 		*sent_bytes = ret;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
