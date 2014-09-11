@@ -288,7 +288,7 @@ static void TestProcess( )
 		std::cout << str.substr( 0, str.size( ) - 1 ) << '\n';
 }
 
-int main( int, char *[] )
+int main( int, char ** )
 {
 	//TestSockets( );
 	//TestStrings( );

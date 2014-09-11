@@ -39,6 +39,7 @@
 
 #if defined _WIN32
 
+	#include <MultiLibrary/Common/Unicode.hpp>
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
 	#define s6_addr16 _S6_un
@@ -253,22 +254,23 @@ std::string IPAddress::ToString( ) const
 	{
 		case FAMILY_INET:
 		{
-			address.resize( INET_ADDRSTRLEN );
+			std::wstring waddress( INET_ADDRSTRLEN, L'\0' );
 
 #if defined _WIN32
 
 			DWORD size = INET_ADDRSTRLEN;
-			if( WSAAddressToStringA( reinterpret_cast<sockaddr *>( host_address ), sizeof( sockaddr_in ), nullptr, &address[0], &size ) == 0 )
+			if( WSAAddressToString( reinterpret_cast<sockaddr *>( host_address ), sizeof( sockaddr_in ), nullptr, &waddress[0], &size ) == 0 )
 
 #elif defined __APPLE__ || defined __linux
 
 			in_addr *haddress = &reinterpret_cast<sockaddr_in *>( host_address )->sin_addr;
-			if( inet_ntop( AF_INET, haddress, &address[0], INET_ADDRSTRLEN ) != nullptr )
+			if( inet_ntop( AF_INET, haddress, &waddress[0], INET_ADDRSTRLEN ) != nullptr )
 
 #endif
 
 			{
-				address.resize( strlen( address.c_str( ) ) );
+				waddress.resize( size - 1 );
+				UTF8::FromWideString( waddress.begin( ), waddress.end( ), std::back_inserter( address ) );
 				return address;
 			}
 
@@ -277,22 +279,23 @@ std::string IPAddress::ToString( ) const
 
 		case FAMILY_INET6:
 		{
-			address.resize( INET6_ADDRSTRLEN );
+			std::wstring waddress( INET6_ADDRSTRLEN, L'\0' );
 
 #if defined _WIN32
 
 			DWORD size = INET6_ADDRSTRLEN;
-			if( WSAAddressToStringA( reinterpret_cast<sockaddr *>( host_address ), sizeof( sockaddr_in6 ), nullptr, &address[0], &size ) == 0 )
+			if( WSAAddressToString( reinterpret_cast<sockaddr *>( host_address ), sizeof( sockaddr_in6 ), nullptr, &waddress[0], &size ) == 0 )
 
 #elif defined __APPLE__ || defined __linux
 
 			in6_addr *haddress = &reinterpret_cast<sockaddr_in6 *>( host_address )->sin6_addr;
-			if( inet_ntop( AF_INET6, haddress, &address[0], INET6_ADDRSTRLEN ) != nullptr )
+			if( inet_ntop( AF_INET6, haddress, &waddress[0], INET6_ADDRSTRLEN ) != nullptr )
 
 #endif
 
 			{
-				address.resize( strlen( address.c_str( ) ) );
+				waddress.resize( size - 1 );
+				UTF8::FromWideString( waddress.begin( ), waddress.end( ), std::back_inserter( address ) );
 				return address;
 			}
 
@@ -325,10 +328,13 @@ bool IPAddress::ResolveString( const std::string &address )
 
 #if defined _WIN32
 
+	std::wstring waddr;
+	UTF8::ToWideString( address.begin( ), address.end( ), std::back_inserter( waddr ) );
+
 	sockaddr_in sock_addr;
 	in_addr &addr = sock_addr.sin_addr;
 	int size = sizeof( sock_addr );
-	if( WSAStringToAddressA( const_cast<char *>( address.c_str( ) ), AF_INET, nullptr, reinterpret_cast<sockaddr *>( &sock_addr ), &size ) == 0 )
+	if( WSAStringToAddress( const_cast<wchar_t *>( waddr.c_str( ) ), AF_INET, nullptr, reinterpret_cast<sockaddr *>( &sock_addr ), &size ) == 0 )
 
 #elif defined __APPLE__ || defined __linux
 
@@ -346,10 +352,13 @@ bool IPAddress::ResolveString( const std::string &address )
 
 #if defined _WIN32
 
+	waddr.clear( );
+	UTF8::ToWideString( address.begin( ), address.end( ), std::back_inserter( waddr ) );
+
 	sockaddr_in6 sock_addr6;
 	in6_addr &addr6 = sock_addr6.sin6_addr;
 	size = sizeof( sock_addr6 );
-	if( WSAStringToAddressA( const_cast<char *>( address.c_str( ) ), AF_INET6, nullptr, reinterpret_cast<sockaddr *>( &sock_addr6 ), &size ) == 0 )
+	if( WSAStringToAddress( const_cast<wchar_t *>( waddr.c_str( ) ), AF_INET6, nullptr, reinterpret_cast<sockaddr *>( &sock_addr6 ), &size ) == 0 )
 
 #elif defined __APPLE__ || defined __linux
 
@@ -366,10 +375,9 @@ bool IPAddress::ResolveString( const std::string &address )
 		return true;
 	}
 
-	addrinfo *result = 0;
+	addrinfo *result = nullptr;
 
-	addrinfo hints;
-	std::memset( &hints, 0, sizeof( hints ) );
+	addrinfo hints = { 0 };
 	hints.ai_family = AF_INET;
 	if( getaddrinfo( address.c_str( ), nullptr, &hints, &result ) == 0 && result != nullptr )
 	{
@@ -380,12 +388,10 @@ bool IPAddress::ResolveString( const std::string &address )
 		haddress->sin_addr.s_addr = raddress->sin_addr.s_addr;
 
 		freeaddrinfo( result );
-		result = nullptr;
 		return true;
 	}
 
-	addrinfo hints6;
-	std::memset( &hints6, 0, sizeof( hints6 ) );
+	addrinfo hints6 = { 0 };
 	hints6.ai_family = AF_INET6;
 	if( getaddrinfo( address.c_str( ), nullptr, &hints6, &result ) == 0 && result != nullptr )
 	{
@@ -396,7 +402,6 @@ bool IPAddress::ResolveString( const std::string &address )
 		std::memcpy( haddress, raddress, 16 );
 
 		freeaddrinfo( result );
-		result = nullptr;
 		return true;
 	}
 
