@@ -36,6 +36,7 @@
 
 #include <MultiLibrary/Media/MediaDecoder.hpp>
 #include <MultiLibrary/Common/InputStream.hpp>
+#include <cstring>
 extern "C"
 {
 	#include <libavformat/avformat.h>

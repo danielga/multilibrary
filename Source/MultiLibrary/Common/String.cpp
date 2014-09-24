@@ -35,6 +35,7 @@
  *************************************************************************/
 
 #include <MultiLibrary/Common/String.hpp>
+#include <cstring>
 
 namespace MultiLibrary
 {

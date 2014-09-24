@@ -132,8 +132,8 @@ File Filesystem::Open( const std::string &path, const char *mode )
 	std::wstring widemode;
 	UTF16::FromUTF8( mode, mode + strlen( mode ), std::back_inserter( widemode ) );
 
-	FILE *file = nullptr;
-	if( _wfopen_s( &file, widepath.c_str( ), widemode.c_str( ) ) != 0 || file == nullptr )
+	FILE *file = _wfopen( widepath.c_str( ), widemode.c_str( ) );
+	if( file == nullptr )
 		return File( nullptr );
 
 	FileSimple *finternal = new FileSimple( this, file, path );
@@ -239,8 +239,8 @@ bool Filesystem::RemoveFolder( const std::string &path, bool recursive )
 std::string Filesystem::GetExecutablePath( )
 {
 	std::string path;
-	wchar_t *widepath = nullptr;
-	if( _get_wpgmptr( &widepath ) != 0 || widepath == nullptr )
+	wchar_t *widepath = _wpgmptr;
+	if( widepath == nullptr )
 		return path;
 
 	UTF8::FromUTF16( widepath, widepath + wcslen( widepath ), std::back_inserter( path ) );

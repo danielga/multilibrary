@@ -39,13 +39,13 @@
 #include <cassert>
 #include <sys/stat.h>
 
-#if defined _WIN32
+#if defined _WIN32 && !defined __GNUC__
 
-	#define ftello64 _ftelli64
-	#define stat64 _stat64
-	#define fstat64 _fstat64
-	#define fseeko64 _fseeki64
-	#define fileno _fileno
+    #define ftello64 _ftelli64
+    #define stat64 _stat64
+    #define fstat64 _fstat64
+    #define fseeko64 _fseeki64
+    #define fileno _fileno
 
 #endif
 

@@ -40,7 +40,7 @@ solution("MultiLibrary")
 	warnings("Extra")
 	flags({"NoPCH"})
 	platforms({"x86", "x64"})
-	configurations({"Release", "Debug", "Static Release", "Static Debug"})
+	configurations({"Release", "Debug", "StaticRelease", "StaticDebug"})
 
 	filter("platforms:x86")
 		architecture("x32")
@@ -74,10 +74,10 @@ solution("MultiLibrary")
 		objdir(PROJECT_FOLDER .. "/Intermediate")
 
 		filter({"configurations:Release", "platforms:x86"})
-			targetdir(PROJECT_FOLDER .. "/Release x86")
+			targetdir(PROJECT_FOLDER .. "/x86/Release")
 
 		filter({"configurations:Release", "platforms:x64"})
-			targetdir(PROJECT_FOLDER .. "/Release x64")
+			targetdir(PROJECT_FOLDER .. "/x64/Release")
 
 	filter({"configurations:Debug"})
 		defines({"MULTILIBRARY_DEBUG"})
@@ -86,41 +86,41 @@ solution("MultiLibrary")
 		objdir(PROJECT_FOLDER .. "/Intermediate")
 
 		filter({"configurations:Debug", "platforms:x86"})
-			targetdir(PROJECT_FOLDER .. "/Debug x86")
+			targetdir(PROJECT_FOLDER .. "/x86/Debug")
 
 		filter({"configurations:Debug", "platforms:x64"})
-			targetdir(PROJECT_FOLDER .. "/Debug x64")
+			targetdir(PROJECT_FOLDER .. "/x64/Debug")
 
-	filter({"configurations:Static Release"})
+	filter({"configurations:StaticRelease"})
 		defines({"MULTILIBRARY_STATIC"})
 		optimize("On")
 		vectorextensions("SSE2")
 		kind("StaticLib")
 		objdir(PROJECT_FOLDER .. "/Intermediate")
 
-		filter({"configurations:Static Release", "options:static-runtime"})
+		filter({"configurations:StaticRelease", "options:static-runtime"})
 			flags({"StaticRuntime"})
 
-		filter({"configurations:Static Release", "platforms:x86"})
-			targetdir(PROJECT_FOLDER .. "/Static Release x86")
+		filter({"configurations:StaticRelease", "platforms:x86"})
+			targetdir(PROJECT_FOLDER .. "/x86/StaticRelease")
 
-		filter({"configurations:Static Release", "platforms:x64"})
-			targetdir(PROJECT_FOLDER .. "/Static Release x64")
+		filter({"configurations:StaticRelease", "platforms:x64"})
+			targetdir(PROJECT_FOLDER .. "/x64/StaticRelease")
 
-	filter({"configurations:Static Debug"})
+	filter({"configurations:StaticDebug"})
 		defines({"MULTILIBRARY_DEBUG", "MULTILIBRARY_STATIC"})
 		flags({"Symbols"})
 		kind("StaticLib")
 		objdir(PROJECT_FOLDER .. "/Intermediate")
 
-		filter({"configurations:Static Debug", "options:static-runtime"})
+		filter({"configurations:StaticDebug", "options:static-runtime"})
 			flags({"StaticRuntime"})
 
-		filter({"configurations:Static Debug", "platforms:x86"})
-			targetdir(PROJECT_FOLDER .. "/Static Debug x86")
+		filter({"configurations:StaticDebug", "platforms:x86"})
+			targetdir(PROJECT_FOLDER .. "/x86/StaticDebug")
 
-		filter({"configurations:Static Debug", "platforms:x64"})
-			targetdir(PROJECT_FOLDER .. "/Static Debug x64")
+		filter({"configurations:StaticDebug", "platforms:x64"})
+			targetdir(PROJECT_FOLDER .. "/x64/StaticDebug")
 
 	project("Testing")
 		uuid("A9FBF5DC-08A5-1840-9169-FA049E25EBA7")
@@ -130,7 +130,7 @@ solution("MultiLibrary")
 		files({SOURCE_FOLDER .. "/Testing/*.cpp", SOURCE_FOLDER .. "/Testing/*.hpp"})
 		links({"Media", "Filesystem", "Network", "Window", "Visual", "Common"})
 
-		filter({"system:windows", "configurations:Static Debug or Static Release"})
+		filter({"system:windows", "configurations:StaticDebug or StaticRelease"})
 			links({"avcodec", "avformat", "avutil", "swscale", "swresample", "openal32", "ws2_32", "glew32", "opengl32", "gdi32"})
 
 		filter({"system:windows", "configurations:Debug or Release"})
@@ -139,13 +139,13 @@ solution("MultiLibrary")
 		--filter("system:linux")
 			--linkoptions({"-Wl,-rpath=./"})
 
-		filter({"system:linux", "configurations:Static Debug or Static Release"})
+		filter({"system:linux", "configurations:StaticDebug or StaticRelease"})
 			links({"pthread", "avcodec", "avformat", "avutil", "swscale", "swresample", "openal", "GLEW", "GL"})
 
 		filter({"system:linux", "configurations:Debug or Release"})
 			links({"GL"})
 
-		filter({"system:macosx", "configurations:Static Debug or Static Release"})
+		filter({"system:macosx", "configurations:StaticDebug or StaticRelease"})
 			links({"pthread", "avcodec", "avformat", "avutil", "swscale", "swresample", "GLEW"})
 			linkoptions({"-framework OpenAL", "-framework OpenGL"})
 
