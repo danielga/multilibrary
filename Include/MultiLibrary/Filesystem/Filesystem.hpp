@@ -52,7 +52,6 @@ public:
 	virtual File Open( const std::string &path, const char *mode );
 	virtual int64_t Size( const std::string &path );
 	virtual bool Exists( const std::string &path );
-	virtual bool CreateFile( const std::string &path, bool overwrite = false );
 	virtual bool RemoveFile( const std::string &path );
 
 	virtual uint64_t Find( const std::string &find, std::vector<std::string> &files, std::vector<std::string> &folders );
@@ -63,12 +62,10 @@ public:
 
 	static std::string GetExecutablePath( );
 
-protected:
 	virtual bool Close( FileInternal *file );
 
+protected:
 	std::vector<FileInternal *> open_files;
-
-	friend class FileSimple;
 };
 
 } // namespace MultiLibrary

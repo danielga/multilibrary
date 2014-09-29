@@ -37,7 +37,6 @@
 #pragma once
 
 #include <MultiLibrary/Media/Export.hpp>
-#include <MultiLibrary/Common/Publisher.hpp>
 #include <chrono>
 #include <string>
 #include <vector>
@@ -49,7 +48,7 @@ namespace MultiLibrary
 class InputStream;
 class MediaDecoder;
 
-class MULTILIBRARY_MEDIA_API SoundBuffer : public Publisher
+class MULTILIBRARY_MEDIA_API SoundBuffer
 {
 public:
 	SoundBuffer( );
@@ -70,14 +69,10 @@ public:
 	std::chrono::microseconds GetDuration( ) const;
 	uint32_t GetBufferIndex( ) const;
 
-	void Subscribe( Subscriber *base );
-	void Unsubscribe( Subscriber *base );
-
 private:
 	bool Initialize( MediaDecoder &file );
 	bool Update( uint32_t channels, uint32_t samplerate );
 
-	std::set<Subscriber *> attached_subscribers;
 	std::vector<short> samples_buffer;
 	uint32_t buffer_id;
 	std::chrono::microseconds buffer_duration;

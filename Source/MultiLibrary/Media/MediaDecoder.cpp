@@ -122,7 +122,6 @@ bool MediaDecoder::Open( InputStream &in_stream )
 
 	decoding_mode = DECODEMODE_STREAM;
 
-	in_stream.Subscribe( this );
 	input_stream = &in_stream;
 
 	if( ( format_context = avformat_alloc_context( ) ) == nullptr )
@@ -185,10 +184,7 @@ bool MediaDecoder::Close( )
 	}
 
 	if( input_stream != nullptr )
-	{
-		input_stream->Unsubscribe( this );
 		input_stream = nullptr;
-	}
 
 	decoding_mode = DECODEMODE_NONE;
 	memory_buffer = nullptr;

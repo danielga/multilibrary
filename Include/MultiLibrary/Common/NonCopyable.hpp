@@ -64,7 +64,7 @@ private:
 	 will be met with a compilation error. It also doesn't have any
 	 definition so if the first protection fails, a linker error occurs.
 	 */
-	NonCopyable( const NonCopyable & );
+	NonCopyable( const NonCopyable & ) = delete;
 
 	/*!
 	 \brief Assignment operator.
@@ -73,7 +73,7 @@ private:
 	 use it, will be met with a compilation error. It also doesn't have any
 	 definition so if the first protection fails, a linker error occurs.
 	 */
-	NonCopyable &operator=( const NonCopyable & );
+	NonCopyable &operator=( const NonCopyable & ) = delete;
 };
 
 } // namespace MultiLibrary

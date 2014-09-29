@@ -37,6 +37,7 @@
 #include <MultiLibrary/Common/Process.hpp>
 #include <MultiLibrary/Common/Unicode.hpp>
 #include <stdexcept>
+#include <system_error>
 #include <windows.h>
 
 namespace MultiLibrary
@@ -45,256 +46,27 @@ namespace MultiLibrary
 namespace Internal
 {
 
-static const size_t STREAM_BUFFER_SIZE = 4096;
-
-class Pipe : public NonCopyable
+void CloseHandle( void *handle )
 {
-public:
-	Pipe( ) :
-		read_handle( nullptr ),
-		write_handle( nullptr )
-	{ }
-
-	~Pipe( )
-	{
-		Close( );
-	}
-
-	void Open( )
-	{
-		if( read_handle != nullptr || write_handle != nullptr )
-			return;
-
-		SECURITY_ATTRIBUTES sa;
-		sa.nLength = static_cast<DWORD>( sizeof( SECURITY_ATTRIBUTES ) );
-		sa.bInheritHandle = TRUE;
-		sa.lpSecurityDescriptor = nullptr;
-		if( CreatePipe( &read_handle, &write_handle, &sa, 0 ) == FALSE )
-			throw std::runtime_error( "unable to create pipe" );
-	}
-
-	void CloseRead( )
-	{
-		if( read_handle != nullptr )
-		{
-			if( CloseHandle( read_handle ) == FALSE )
-				throw std::runtime_error( "unable to close pipe read handle" );
-
-			read_handle = nullptr;
-		}
-	}
-
-	void CloseWrite( )
-	{
-		if( write_handle != nullptr )
-		{
-			if( CloseHandle( write_handle ) == FALSE )
-				throw std::runtime_error( "unable to close pipe write handle" );
-
-			write_handle = nullptr;
-		}
-	}
-
-	void Close( )
-	{
-		CloseRead( );
-		CloseWrite( );
-	}
-
-	HANDLE Read( ) const
-	{
-		return read_handle;
-	}
-
-	HANDLE Write( ) const
-	{
-		return write_handle;
-	}
-
-private:
-	HANDLE read_handle;
-	HANDLE write_handle;
-};
-
-class PipeReadStream : public std::streambuf, public NonCopyable
-{
-public:
-	PipeReadStream( Pipe &pipe_ref ) :
-		pipe( pipe_ref )
-	{ }
-
-protected:
-	virtual int_type underflow( )
-	{
-		if( pipe.Read( ) != nullptr && gptr( ) == egptr( ) )
-		{
-			DWORD size = 0;
-			if( PeekNamedPipe( pipe.Read( ), nullptr, 0, nullptr, &size, nullptr ) == FALSE || size == 0 )
-				return traits_type::eof( );
-
-			if( ReadFile( pipe.Read( ), stream_buffer, STREAM_BUFFER_SIZE, &size, nullptr ) == FALSE || size == 0 )
-				return traits_type::eof( );
-
-			setg( stream_buffer, stream_buffer, stream_buffer + size );
-			return traits_type::to_int_type( *eback( ) );
-		}
-
-		return traits_type::eof( );
-	}
-
-private:
-	Pipe &pipe;
-	char stream_buffer[STREAM_BUFFER_SIZE];
-};
-
-class PipeWriteStream : public std::streambuf, public NonCopyable
-{
-public:
-	PipeWriteStream( Pipe &pipe_ref ) :
-		pipe( pipe_ref )
-	{
-		setp( stream_buffer, stream_buffer + STREAM_BUFFER_SIZE );
-	}
-
-protected:
-	virtual int sync( )
-	{
-		if( pipe.Write( ) != nullptr && pbase( ) != pptr( ) )
-		{
-			DWORD size = static_cast<DWORD>( pptr( ) - pbase( ) ), written = 0;
-			if( WriteFile( pipe.Write( ), pbase( ), size, &written, nullptr ) == TRUE && written == size )
-			{
-				setp( stream_buffer, stream_buffer + STREAM_BUFFER_SIZE );
-				return 0;
-			}
-		}
-
-		return -1;
-	}
-
-	virtual int_type overflow( int_type c = traits_type::eof( ) )
-	{
-		if( sync( ) == -1 )
-			return traits_type::eof( );
-
-		if( c != traits_type::eof( ) && sputc( traits_type::to_char_type( c ) ) == traits_type::eof( ) )
-			return traits_type::eof( );
-
-		return traits_type::not_eof( c );
-	}
-
-private:
-	Pipe &pipe;
-	char stream_buffer[STREAM_BUFFER_SIZE];
-};
+	::CloseHandle( handle );
+}
 
 } // namespace Internal
 
-struct Process::InternalData : public NonCopyable
+Process::Process( const std::string &path, const std::string &args ) :
+	process( nullptr ),
+	exit_code( 0 ),
+	input_pipe( true, false ),
+	output_pipe( false, true ),
+	error_pipe( false, true )
 {
-	InternalData( ) :
-		handle( nullptr ),
-		input_streambuf( input_pipe ),
-		output_streambuf( output_pipe ),
-		error_streambuf( error_pipe ),
-		input_stream( &input_streambuf ),
-		output_stream( &output_streambuf ),
-		error_stream( &error_streambuf )
-	{
-		input_pipe.Open( );
-		output_pipe.Open( );
-		error_pipe.Open( );
+	Start( path, args );
+}
 
-		if( SetHandleInformation( input_pipe.Write( ), HANDLE_FLAG_INHERIT, 0 ) == FALSE )
-			throw std::runtime_error( "unable to set pipe read handle flag" );
-
-		if( SetHandleInformation( output_pipe.Read( ), HANDLE_FLAG_INHERIT, 0 ) == FALSE )
-			throw std::runtime_error( "unable to set pipe read handle flag" );
-
-		if( SetHandleInformation( error_pipe.Read( ), HANDLE_FLAG_INHERIT, 0 ) == FALSE )
-			throw std::runtime_error( "unable to set pipe read handle flag" );
-	}
-
-	HANDLE handle;
-
-	Internal::Pipe input_pipe;
-	Internal::Pipe output_pipe;
-	Internal::Pipe error_pipe;
-
-	Internal::PipeWriteStream input_streambuf;
-	Internal::PipeReadStream output_streambuf;
-	Internal::PipeReadStream error_streambuf;
-
-	std::ostream input_stream;
-	std::istream output_stream;
-	std::istream error_stream;
-};
-
-Process::Process( ) :
+Process::Process( const std::string &path, const std::vector<std::string> &args ) :
 	process( nullptr ),
 	exit_code( 0 )
-{ }
-
-Process::~Process( )
 {
-	Close( );
-}
-
-bool Process::Start( const std::string &path, const std::string &args )
-{
-	if( process != nullptr )
-		return false;
-
-	std::string cmdline;
-	cmdline.reserve( path.size( ) + 3 + args.size( ) );
-	cmdline += '\"';
-	cmdline += path;
-	cmdline += '\"';
-
-	if( !args.empty( ) )
-	{
-		cmdline += ' ';
-		cmdline += args;
-	}
-
-	std::wstring widecmdline;
-	UTF16::FromUTF8( cmdline.begin( ), cmdline.end( ), std::back_inserter( widecmdline ) );
-
-	process = new InternalData;
-
-	STARTUPINFO startup;
-	ZeroMemory( &startup, sizeof( startup ) );
-	startup.cb = sizeof( startup );
-	startup.dwFlags = STARTF_USESTDHANDLES;
-	startup.hStdInput = process->input_pipe.Read( );
-	startup.hStdOutput = process->output_pipe.Write( );
-	startup.hStdError = process->error_pipe.Write( );
-
-	PROCESS_INFORMATION info;
-
-	if( CreateProcess( nullptr, &widecmdline[0], nullptr, nullptr, TRUE, 0, nullptr, nullptr, &startup, &info ) == TRUE )
-	{
-		if( CloseHandle( info.hThread ) == FALSE )
-			throw std::runtime_error( "unable to close thread handle" );
-
-		process->input_pipe.CloseRead( );
-		process->output_pipe.CloseWrite( );
-		process->error_pipe.CloseWrite( );
-		process->handle = info.hProcess;
-		exit_code = 0;
-		return true;
-	}
-
-	delete process;
-	process = nullptr;
-	return false;
-}
-
-bool Process::Start( const std::string &path, const std::vector<std::string> &args )
-{
-	if( process != nullptr )
-		return false;
-
 	std::string targs;
 
 	std::vector<std::string>::const_iterator it, begin = args.begin( ), end = args.end( );
@@ -310,37 +82,72 @@ bool Process::Start( const std::string &path, const std::vector<std::string> &ar
 		targs += '\"';
 	}
 
-	return Start( path, targs );
+	Start( path, targs );
+}
+
+Process::~Process( )
+{
+	Close( );
+}
+
+void Process::Start( const std::string &path, const std::string &args )
+{
+	std::string cmdline;
+	cmdline.reserve( path.size( ) + 3 + args.size( ) );
+	cmdline += '\"';
+	cmdline += path;
+	cmdline += '\"';
+
+	if( !args.empty( ) )
+	{
+		cmdline += ' ';
+		cmdline += args;
+	}
+
+	std::wstring widecmdline;
+	UTF16::FromUTF8( cmdline.begin( ), cmdline.end( ), std::back_inserter( widecmdline ) );
+
+	STARTUPINFO startup;
+	ZeroMemory( &startup, sizeof( startup ) );
+	startup.cb = sizeof( startup );
+	startup.dwFlags = STARTF_USESTDHANDLES;
+	startup.hStdInput = input_pipe.ReadHandle( );
+	startup.hStdOutput = output_pipe.WriteHandle( );
+	startup.hStdError = error_pipe.WriteHandle( );
+
+	PROCESS_INFORMATION info;
+	if( CreateProcess( nullptr, &widecmdline[0], nullptr, nullptr, TRUE, 0, nullptr, nullptr, &startup, &info ) == FALSE )
+		throw std::system_error( GetLastError( ), std::system_category( ), "failed to create process" );
+
+	CloseHandle( info.hThread );
+	input_pipe.CloseRead( );
+	output_pipe.CloseWrite( );
+	error_pipe.CloseWrite( );
+	process = info.hProcess;
 }
 
 bool Process::Wait( const std::chrono::microseconds &timeout )
 {
 	if( process == nullptr )
-		return false;
+		return true;
 
 	std::chrono::milliseconds millisecs = std::chrono::duration_cast<std::chrono::milliseconds>( timeout );
-	return WaitForSingleObject( process->handle, static_cast<DWORD>( millisecs.count( ) ) ) == WAIT_OBJECT_0;
+	return WaitForSingleObject( process, static_cast<DWORD>( millisecs.count( ) ) ) == WAIT_OBJECT_0;
 }
 
 bool Process::Close( )
 {
 	if( process == nullptr )
-		return false;
+		return true;
 
 	CloseInput( );
 
-	if( WaitForSingleObject( process->handle, INFINITE ) == WAIT_OBJECT_0 )
+	if( WaitForSingleObject( process, INFINITE ) == WAIT_OBJECT_0 )
 	{
 		DWORD code = 0;
-		if( GetExitCodeProcess( process->handle, &code ) == FALSE )
-			throw std::runtime_error( "unable to get process exit code" );
-
+		GetExitCodeProcess( process, &code );
 		exit_code = static_cast<int32_t>( code );
-
-		if( CloseHandle( process->handle ) == FALSE )
-			throw std::runtime_error( "unable to close process handle" );
-
-		delete process;
+		CloseHandle( process );
 		process = nullptr;
 		return true;
 	}
@@ -353,32 +160,28 @@ void Process::Kill( )
 	if( process == nullptr )
 		return;
 
-	if( TerminateProcess( process->handle, 0 ) == FALSE || !Close( ) )
-		throw std::runtime_error( "unable to terminate process" );
+	TerminateProcess( process, 0 );
+	Close( );
 }
 
 void Process::CloseInput( )
 {
-	if( process != nullptr && process->input_pipe.Write( ) != nullptr )
-	{
-		process->input_stream.flush( );
-		process->input_pipe.CloseWrite( );
-	}
+	input_pipe.CloseWrite( );
 }
 
-std::ostream &Process::Input( )
+Pipe &Process::Input( )
 {
-	return process->input_stream;
+	return input_pipe;
 }
 
-std::istream &Process::Output( )
+Pipe &Process::Output( )
 {
-	return process->output_stream;
+	return output_pipe;
 }
 
-std::istream &Process::Error( )
+Pipe &Process::Error( )
 {
-	return process->error_stream;
+	return error_pipe;
 }
 
 int32_t Process::ExitCode( ) const

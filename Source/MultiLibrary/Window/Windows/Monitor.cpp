@@ -38,6 +38,12 @@
 #include <MultiLibrary/Common/Unicode.hpp>
 #include <Windows.h>
 
+#if !defined EDS_ROTATEDMODE
+
+	#define EDS_ROTATEDMODE 0x00000004
+
+#endif
+
 namespace MultiLibrary
 {
 

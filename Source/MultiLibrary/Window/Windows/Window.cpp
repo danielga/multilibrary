@@ -38,6 +38,7 @@
 #include <MultiLibrary/Window/Windows/Context.hpp>
 #include <MultiLibrary/Common/Unicode.hpp>
 #include <stdexcept>
+#include <cstring>
 #include <Windows.h>
 #include <GL/glew.h>
 #include <GL/wglew.h>
@@ -240,9 +241,13 @@ bool Window::Create( const VideoMode &video_setup, const std::string &title, con
 	if( handle == nullptr )
 		return false;
 
+#if defined MSGFLT_ALLOW
+
 	ChangeWindowMessageFilterEx( handle, WM_DROPFILES, MSGFLT_ALLOW, nullptr );
 	ChangeWindowMessageFilterEx( handle, WM_COPYDATA, MSGFLT_ALLOW, nullptr );
 	ChangeWindowMessageFilterEx( handle, 0x0049, MSGFLT_ALLOW, nullptr ); // WM_COPYGLOBALDATA
+
+#endif
 
 	DWORD newflags = GetWindowLong( handle, GWL_STYLE );
 	DWORD newexflags = GetWindowLong( handle, GWL_EXSTYLE );

@@ -37,7 +37,6 @@
 #pragma once
 
 #include <MultiLibrary/Common/Export.hpp>
-#include <MultiLibrary/Common/Publisher.hpp>
 
 namespace MultiLibrary
 {
@@ -55,9 +54,15 @@ enum SeekMode
 /*!
  \brief An abstract class for objects that can act as data streams.
  */
-class MULTILIBRARY_COMMON_API Stream : public Publisher
+class MULTILIBRARY_COMMON_API Stream
 {
 public:
+	virtual bool IsValid( ) const = 0;
+
+	explicit operator bool( ) const;
+
+	bool operator!( ) const;
+
 	/*!
 	 \brief Set the current position for read/write operations.
 

@@ -38,6 +38,7 @@
 
 #include <MultiLibrary/Common/Export.hpp>
 #include <MultiLibrary/Common/Stream.hpp>
+#include <string>
 
 namespace MultiLibrary
 {
@@ -57,6 +58,195 @@ public:
 	 \return Amount of read bytes.
 	 */
 	virtual size_t Read( void *data, size_t size ) = 0;
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+	 */
+	virtual InputStream &operator>>( bool &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( int8_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( uint8_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( int16_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( uint16_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( int32_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( uint32_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( int64_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( uint64_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( float &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( double &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( char &data );
+
+	/*!
+	 \brief Read data from the buffer into an array.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+
+	 \deprecated This function is unsafe since the array size is unknown.
+	 */
+	virtual InputStream &operator>>( char *data );
+
+	/*!
+	 \brief Read data from the buffer into an object.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( std::string &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( wchar_t &data );
+
+	/*!
+	 \brief Read data from the buffer into an array.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+
+	 \deprecated This function is unsafe since the array size is unknown.
+	 */
+	virtual InputStream &operator>>( wchar_t *data );
+
+	/*!
+	 \brief Read data from the buffer into an object.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	virtual InputStream &operator>>( std::wstring &data );
 };
 
 } // namespace MultiLibrary

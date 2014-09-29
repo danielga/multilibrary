@@ -46,7 +46,7 @@ namespace MultiLibrary
 class FileInternal
 {
 public:
-	virtual ~FileInternal( ) { };
+	virtual ~FileInternal( ) { }
 
 	virtual void *Release( ) = 0;
 
@@ -60,7 +60,9 @@ public:
 	virtual bool EndOfFile( ) const = 0;
 
 	virtual size_t Read( void *data, size_t size ) = 0;
+	virtual int Scan( const char *format, ... ) = 0;
 	virtual size_t Write( const void *data, size_t size ) = 0;
+	virtual int Print( const char *format, ... ) = 0;
 };
 
 } // namespace MultiLibrary

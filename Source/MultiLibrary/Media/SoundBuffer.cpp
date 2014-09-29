@@ -49,10 +49,6 @@ SoundBuffer::SoundBuffer( )
 
 SoundBuffer::~SoundBuffer( )
 {
-	std::set<Subscriber *>::iterator it, end = attached_subscribers.end( );
-	for( it = attached_subscribers.begin( ); it != end; ++it )
-		( *it )->ResetPublisher( );
-
 	alCheck( alDeleteBuffers( 1, &buffer_id ) );
 }
 
@@ -187,16 +183,6 @@ bool SoundBuffer::Update( uint32_t channels, uint32_t samplerate )
 	std::vector<int16_t>( ).swap( samples_buffer );
 
 	return true;
-}
-
-void SoundBuffer::Subscribe( Subscriber *base )
-{
-	attached_subscribers.insert( base );
-}
-
-void SoundBuffer::Unsubscribe( Subscriber *base )
-{
-	attached_subscribers.erase( base );
 }
 
 } // namespace MultiLibrary

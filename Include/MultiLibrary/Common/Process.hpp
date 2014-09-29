@@ -38,6 +38,7 @@
 
 #include <MultiLibrary/Common/Export.hpp>
 #include <MultiLibrary/Common/NonCopyable.hpp>
+#include <MultiLibrary/Common/Pipe.hpp>
 #include <chrono>
 #include <iostream>
 #include <string>
@@ -55,7 +56,12 @@ public:
 	/*!
 	 \brief Default constructor.
 	 */
-	Process( );
+	Process( const std::string &path, const std::string &args = "" );
+
+	/*!
+	 \brief Default constructor.
+	 */
+	Process( const std::string &path, const std::vector<std::string> &args );
 
 	/*!
 	 \brief Destructor.
@@ -63,32 +69,6 @@ public:
 	 The internal process handles are also destroyed.
 	 */
 	~Process( );
-
-	/*!
-	 \brief Starts the given executable.
-
-	 The arguments are provided in a single string.
-
-	 \param path Executable path.
-	 \param args (Optional) Arguments to send to the executable.
-
-	 \return true if it succeeds, false if it fails.
-	 */
-	bool Start( const std::string &path, const std::string &args = "" );
-
-	/*!
-	 \brief Starts the given executable.
-
-	 The arguments are provided in a list of strings.
-
-	 \param path Executable path.
-	 \param args (Optional) Arguments to send to the executable.
-
-	 \return true if it succeeds, false if it fails.
-
-	 \overload
-	 */
-	bool Start( const std::string &path, const std::vector<std::string> &args );
 
 	/*!
 	 \brief Wait for the process to finish.
@@ -123,21 +103,21 @@ public:
 
 	 \return Input stream object.
 	 */
-	std::ostream &Input( );
+	Pipe &Input( );
 
 	/*!
 	 \brief Get the output stream.
 
 	 \return Output stream object.
 	 */
-	std::istream &Output( );
+	Pipe &Output( );
 
 	/*!
 	 \brief Get the error output stream.
 
 	 \return Error output stream object.
 	 */
-	std::istream &Error( );
+	Pipe &Error( );
 
 	/*!
 	 \brief Return the process exit code.
@@ -147,9 +127,21 @@ public:
 	int32_t ExitCode( ) const;
 
 private:
-	struct InternalData;
-	InternalData *process;
+	/*!
+	 \brief Starts the given executable.
+
+	 The arguments are provided in a single string.
+
+	 \param path Executable path.
+	 \param args Arguments to send to the executable.
+	 */
+	void Start( const std::string &path, const std::string &args );
+
+	void *process;
 	int32_t exit_code;
+	Pipe input_pipe;
+	Pipe output_pipe;
+	Pipe error_pipe;
 };
 
 } // namespace MultiLibrary

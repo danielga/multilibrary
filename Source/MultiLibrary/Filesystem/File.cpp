@@ -38,34 +38,29 @@
 #include <MultiLibrary/Filesystem/FileInternal.hpp>
 #include <cassert>
 #include <cstring>
+#include <iostream>
+#include <fstream>
 
 namespace MultiLibrary
 {
 
-File::File( FileInternal *file ) :
+File::File( const std::shared_ptr<FileInternal> &file ) :
 	file_internal( file )
 { }
 
+File::File( std::shared_ptr<FileInternal> &&file )
+{
+	file_internal.swap( file );
+}
+
 File::~File( )
 {
-	std::set<Subscriber *>::iterator it, end = attached_subscribers.end( );
-	for( it = attached_subscribers.begin( ); it != end; ++it )
-		( *it )->ResetPublisher( );
+	Close( );
 }
 
 bool File::IsValid( ) const
 {
 	return file_internal && file_internal->IsValid( );
-}
-
-File::operator bool( ) const
-{
-	return IsValid( );
-}
-
-bool File::operator!( ) const
-{
-	return !IsValid( );
 }
 
 bool File::Close( )
@@ -138,8 +133,6 @@ bool File::EndOfFile( ) const
 
 size_t File::Read( void *data, size_t size )
 {
-	assert( data != nullptr && size != 0 );
-
 	if( file_internal )
 		return file_internal->Read( data, size );
 
@@ -148,114 +141,126 @@ size_t File::Read( void *data, size_t size )
 
 size_t File::Write( const void *data, size_t size )
 {
-	assert( data != nullptr && size != 0 );
-
 	if( file_internal )
 		return file_internal->Write( data, size );
 
 	return 0;
 }
 
-File &File::operator>>( bool &data )
+InputStream &File::operator>>( bool &data )
 {
-	bool value;
-	if( Read( &value, sizeof( bool ) ) == sizeof( bool ) )
-		data = value;
+	char value[6] = { 0 };
+	if( file_internal && Read( value, sizeof( *value ) * 5 ) == sizeof( *value ) * 5 )
+	{
+		if( strcmp( value, "false" ) == 0 )
+		{
+			data = false;
+		}
+		else if( strncmp( value, "true", 4 ) == 0 )
+		{
+			Seek( -1, SEEKMODE_CUR );
+			data = true;
+		}
+		else
+		{
+			Seek( -5, SEEKMODE_CUR );
+		}
+	}
 
 	return *this;
 }
 
-File &File::operator>>( int8_t &data )
+InputStream &File::operator>>( int8_t &data )
 {
 	int8_t value;
-	if( Read( &value, sizeof( int8_t ) ) == sizeof( int8_t ) )
+	if( file_internal && file_internal->Scan( "%hhi", &value ) == 1 )
 		data = value;
 
 	return *this;
 }
 
-File &File::operator>>( uint8_t &data )
+InputStream &File::operator>>( uint8_t &data )
 {
 	uint8_t value;
-	if( Read( &value, sizeof( uint8_t ) ) == sizeof( uint8_t ) )
+	if( file_internal && file_internal->Scan( "%hhu", &value ) == 1 )
 		data = value;
 
 	return *this;
 }
 
-File &File::operator>>( int16_t &data )
+InputStream &File::operator>>( int16_t &data )
 {
 	int16_t value;
-	if( Read( &value, sizeof( int16_t ) ) == sizeof( int16_t ) )
+	if( file_internal && file_internal->Scan( "%hi", &value ) == 1 )
 		data = value;
 
 	return *this;
 }
 
-File &File::operator>>( uint16_t &data )
+InputStream &File::operator>>( uint16_t &data )
 {
 	uint16_t value;
-	if( Read( &value, sizeof( uint16_t ) ) == sizeof( uint16_t ) )
+	if( file_internal && file_internal->Scan( "%hu", &value ) == 1 )
 		data = value;
 
 	return *this;
 }
 
-File &File::operator>>( int32_t &data )
+InputStream &File::operator>>( int32_t &data )
 {
 	int32_t value;
-	if( Read( &value, sizeof( int32_t ) ) == sizeof( int32_t ) )
+	if( file_internal && file_internal->Scan( "%i", &value ) == 1 )
 		data = value;
 
 	return *this;
 }
 
-File &File::operator>>( uint32_t &data )
+InputStream &File::operator>>( uint32_t &data )
 {
 	uint32_t value;
-	if( Read( &value, sizeof( uint32_t ) ) == sizeof( uint32_t ) )
+	if( file_internal && file_internal->Scan( "%u", &value ) == 1 )
 		data = value;
 
 	return *this;
 }
 
-File &File::operator>>( int64_t &data )
+InputStream &File::operator>>( int64_t &data )
 {
 	int64_t value;
-	if( Read( &value, sizeof( int64_t ) ) == sizeof( int64_t ) )
+	if( file_internal && file_internal->Scan( "%lli", &value ) == 1 )
 		data = value;
 
 	return *this;
 }
 
-File &File::operator>>( uint64_t &data )
+InputStream &File::operator>>( uint64_t &data )
 {
 	uint64_t value;
-	if( Read( &value, sizeof( uint64_t ) ) == sizeof( uint64_t ) )
+	if( file_internal && file_internal->Scan( "%llu", &value ) == 1 )
 		data = value;
 
 	return *this;
 }
 
-File &File::operator>>( float &data )
+InputStream &File::operator>>( float &data )
 {
 	float value;
-	if( Read( &value, sizeof( float ) ) == sizeof( float ) )
+	if( file_internal && file_internal->Scan( "%f", &value ) == 1 )
 		data = value;
 
 	return *this;
 }
 
-File &File::operator>>( double &data )
+InputStream &File::operator>>( double &data )
 {
 	double value;
-	if( Read( &value, sizeof( double ) ) == sizeof( double ) )
+	if( file_internal && file_internal->Scan( "%lf", &value ) == 1 )
 		data = value;
 
 	return *this;
 }
 
-File &File::operator>>( char &data )
+InputStream &File::operator>>( char &data )
 {
 	char value;
 	if( Read( &value, sizeof( char ) ) == sizeof( char ) )
@@ -264,17 +269,17 @@ File &File::operator>>( char &data )
 	return *this;
 }
 
-File &File::operator>>( char *data )
+InputStream &File::operator>>( char *data )
 {
 	assert( data != nullptr );
 
-	char ch = 0;
+	char ch = '\0';
 	size_t offset = 0;
-	while( *this >> ch )
+	while( Read( &ch, sizeof( ch ) ) == sizeof( ch ) )
 	{
 		data[offset] = ch;
 
-		if( ch == 0 )
+		if( ch == '\r' || ch == '\n' )
 			break;
 
 		++offset;
@@ -283,35 +288,35 @@ File &File::operator>>( char *data )
 	return *this;
 }
 
-File &File::operator>>( std::string &data )
+InputStream &File::operator>>( std::string &data )
 {
-	char ch = 0;
-	while( *this >> ch && ch != 0 )
+	char ch = '\0';
+	while( Read( &ch, sizeof( ch ) ) == sizeof( ch ) && ch != '\r' && ch != '\n' )
 		data += ch;
 
 	return *this;
 }
 
-File &File::operator>>( wchar_t &data )
+InputStream &File::operator>>( wchar_t &data )
 {
 	wchar_t value;
-	if( Read( &value, sizeof( wchar_t ) ) == sizeof( wchar_t ) )
+	if( Read( &value, sizeof( value ) ) == sizeof( value ) )
 		data = value;
 
 	return *this;
 }
 
-File &File::operator>>( wchar_t *data )
+InputStream &File::operator>>( wchar_t *data )
 {
 	assert( data != nullptr );
 
-	wchar_t ch = 0;
+	wchar_t ch = L'\0';
 	size_t offset = 0;
-	while( *this >> ch )
+	while( Read( &ch, sizeof( ch ) ) == sizeof( ch ) )
 	{
 		data[offset] = ch;
 
-		if( ch == 0 )
+		if( ch == L'\r' || ch == L'\n' )
 			break;
 
 		++offset;
@@ -320,113 +325,141 @@ File &File::operator>>( wchar_t *data )
 	return *this;
 }
 
-File &File::operator>>( std::wstring &data )
+InputStream &File::operator>>( std::wstring &data )
 {
-	wchar_t ch = 0;
-	while( *this >> ch && ch != 0 )
+	wchar_t ch = L'\0';
+	while( Read( &ch, sizeof( ch ) ) == sizeof( ch ) && ch != L'\r' && ch != L'\n' )
 		data += ch;
 
 	return *this;
 }
 
-File &File::operator<<( const bool &data )
+OutputStream &File::operator<<( const bool &data )
 {
-	Write( &data, sizeof( bool ) );
+	if( file_internal )
+		file_internal->Print( data ? "true" : "false" );
+
 	return *this;
 }
 
-File &File::operator<<( const int8_t &data )
+OutputStream &File::operator<<( const int8_t &data )
 {
-	Write( &data, sizeof( int8_t ) );
+	if( file_internal )
+		file_internal->Print( "%hhi", data );
+
 	return *this;
 }
 
-File &File::operator<<( const uint8_t &data )
+OutputStream &File::operator<<( const uint8_t &data )
 {
-	Write( &data, sizeof( uint8_t ) );
+	if( file_internal )
+		file_internal->Print( "%hhu", data );
+
 	return *this;
 }
 
-File &File::operator<<( const int16_t &data )
+OutputStream &File::operator<<( const int16_t &data )
 {
-	Write( &data, sizeof( int16_t ) );
+	if( file_internal )
+		file_internal->Print( "%hi", data );
+
 	return *this;
 }
 
-File &File::operator<<( const uint16_t &data )
+OutputStream &File::operator<<( const uint16_t &data )
 {
-	Write( &data, sizeof( uint16_t ) );
+	if( file_internal )
+		file_internal->Print( "%hu", data );
+
 	return *this;
 }
 
-File &File::operator<<( const int32_t &data )
+OutputStream &File::operator<<( const int32_t &data )
 {
-	Write( &data, sizeof( int32_t ) );
+	if( file_internal )
+		file_internal->Print( "%i", data );
+
 	return *this;
 }
 
-File &File::operator<<( const uint32_t &data )
+OutputStream &File::operator<<( const uint32_t &data )
 {
-	Write( &data, sizeof( uint32_t ) );
+	if( file_internal )
+		file_internal->Print( "%u", data );
+
 	return *this;
 }
 
-File &File::operator<<( const float &data )
+OutputStream &File::operator<<( const int64_t &data )
 {
-	Write( &data, sizeof( float ) );
+	if( file_internal )
+		file_internal->Print( "%lli", data );
+
 	return *this;
 }
 
-File &File::operator<<( const double &data )
+OutputStream &File::operator<<( const uint64_t &data )
 {
-	Write( &data, sizeof( double ) );
+	if( file_internal )
+		file_internal->Print( "%llu", data );
+
 	return *this;
 }
 
-File &File::operator<<( const char &data )
+OutputStream &File::operator<<( const float &data )
+{
+	if( file_internal )
+		file_internal->Print( "%f", data );
+
+	return *this;
+}
+
+OutputStream &File::operator<<( const double &data )
+{
+	if( file_internal )
+		file_internal->Print( "%lf", data );
+
+	return *this;
+}
+
+OutputStream &File::operator<<( const char &data )
 {
 	Write( &data, sizeof( char ) );
 	return *this;
 }
 
-File &File::operator<<( const char *data )
+OutputStream &File::operator<<( const char *data )
 {
-	Write( data, ( std::strlen( data ) + 1 ) * sizeof( char ) );
+	assert( data != nullptr );
+
+	Write( data, std::strlen( data ) * sizeof( char ) );
 	return *this;
 }
 
-File &File::operator<<( const std::string &data )
+OutputStream &File::operator<<( const std::string &data )
 {
-	Write( data.c_str( ), ( data.length( ) + 1 ) * sizeof( char ) );
+	Write( data.c_str( ), data.length( ) * sizeof( char ) );
 	return *this;
 }
 
-File &File::operator<<( const wchar_t &data )
+OutputStream &File::operator<<( const wchar_t &data )
 {
 	Write( &data, sizeof( wchar_t ) );
 	return *this;
 }
 
-File &File::operator<<( const wchar_t *data )
+OutputStream &File::operator<<( const wchar_t *data )
 {
-	Write( data, ( std::wcslen( data ) + 1 ) * sizeof( wchar_t ) );
+	assert( data != nullptr );
+
+	Write( data, std::wcslen( data ) * sizeof( wchar_t ) );
 	return *this;
 }
 
-File &File::operator<<( const std::wstring &data )
+OutputStream &File::operator<<( const std::wstring &data )
 {
-	Write( data.c_str( ), ( data.length( ) + 1 ) * sizeof( wchar_t ) );
+	Write( data.c_str( ), data.length( ) * sizeof( wchar_t ) );
 	return *this;
-}
-
-void File::Subscribe( Subscriber *base )
-{
-	attached_subscribers.insert( base );
-}
-
-void File::Unsubscribe( Subscriber *base )
-{
-	attached_subscribers.erase( base );
 }
 
 } // namespace MultiLibrary

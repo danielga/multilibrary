@@ -37,7 +37,6 @@
 #pragma once
 
 #include <MultiLibrary/Media/Export.hpp>
-#include <MultiLibrary/Common/Subscriber.hpp>
 #include <MultiLibrary/Common/NonCopyable.hpp>
 #include <chrono>
 #include <string>
@@ -66,7 +65,7 @@ struct VideoFrame
 	uint32_t height;
 };
 
-class MULTILIBRARY_MEDIA_API MediaDecoder : public Subscriber, public NonCopyable
+class MULTILIBRARY_MEDIA_API MediaDecoder : public NonCopyable
 {
 public:
 	enum StreamType

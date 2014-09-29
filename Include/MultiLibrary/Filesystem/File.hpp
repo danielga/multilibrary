@@ -38,7 +38,6 @@
 
 #include <MultiLibrary/Filesystem/Export.hpp>
 #include <MultiLibrary/Common/IOStream.hpp>
-#include <MultiLibrary/Common/Subscriber.hpp>
 #include <string>
 #include <set>
 #include <memory>
@@ -56,13 +55,11 @@ class FileInternal;
 class MULTILIBRARY_FILESYSTEM_API File : public IOStream
 {
 public:
-	File( FileInternal *file );
-
+	File( const std::shared_ptr<FileInternal> &file );
+	File( std::shared_ptr<FileInternal> &&file );
 	virtual ~File( );
 
 	bool IsValid( ) const;
-	explicit operator bool( ) const;
-	bool operator!( ) const;
 
 	bool Close( );
 
@@ -77,50 +74,403 @@ public:
 	bool Errored( ) const;
 	bool EndOfFile( ) const;
 
-	size_t Read( void *value, size_t size );
-	size_t Write( const void *value, size_t size );
+	/*!
+	 \brief Reads the specified amount of bytes into the provided buffer.
 
-	File &operator>>( bool &data );
-	File &operator>>( int8_t &data );
-	File &operator>>( uint8_t &data );
-	File &operator>>( int16_t &data );
-	File &operator>>( uint16_t &data );
-	File &operator>>( int32_t &data );
-	File &operator>>( uint32_t &data );
-	File &operator>>( int64_t &data );
-	File &operator>>( uint64_t &data );
-	File &operator>>( float &data );
-	File &operator>>( double &data );
-	File &operator>>( char &data );
-	File &operator>>( char *data ); // This is very dangerous and slow
-	File &operator>>( std::string &data ); // This is slow and HDD heavy
-	File &operator>>( wchar_t &data );
-	File &operator>>( wchar_t *data ); // This is very dangerous and slow
-	File &operator>>( std::wstring &data ); // This is slow and HDD heavy
+	 \param data Buffer to store the data.
+	 \param size Size of the buffer.
 
-	File &operator<<( const bool &data );
-	File &operator<<( const int8_t &data );
-	File &operator<<( const uint8_t &data );
-	File &operator<<( const int16_t &data );
-	File &operator<<( const uint16_t &data );
-	File &operator<<( const int32_t &data );
-	File &operator<<( const uint32_t &data );
-	File &operator<<( const int64_t &data );
-	File &operator<<( const uint64_t &data );
-	File &operator<<( const float &data );
-	File &operator<<( const double &data );
-	File &operator<<( const char &data );
-	File &operator<<( const char *data );
-	File &operator<<( const std::string &data );
-	File &operator<<( const wchar_t &data );
-	File &operator<<( const wchar_t *data );
-	File &operator<<( const std::wstring &data );
+	 \return Amount of read bytes.
+	 */
+	size_t Read( void *data, size_t size );
 
-	void Subscribe( Subscriber *base );
-	void Unsubscribe( Subscriber *base );
+	/*!
+	 \brief Writes the specified amount of bytes from the provided buffer.
+
+	 \param data Data to write.
+	 \param size Size of the data.
+
+	 \return Amount of written bytes.
+	 */
+	size_t Write( const void *data, size_t size );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+	 */
+	InputStream &operator>>( bool &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( int8_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( uint8_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( int16_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( uint16_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( int32_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( uint32_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( int64_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( uint64_t &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( float &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( double &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( char &data );
+
+	/*!
+	 \brief Read data from the buffer into an array.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+
+	 \deprecated This function is unsafe since the array size is unknown.
+	 */
+	InputStream &operator>>( char *data );
+
+	/*!
+	 \brief Read data from the buffer into an object.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( std::string &data );
+
+	/*!
+	 \brief Read data from the buffer into a variable.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( wchar_t &data );
+
+	/*!
+	 \brief Read data from the buffer into an array.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+
+	 \deprecated This function is unsafe since the array size is unknown.
+	 */
+	InputStream &operator>>( wchar_t *data );
+
+	/*!
+	 \brief Read data from the buffer into an object.
+
+	 \param data Where to store the data.
+
+	 \return This object.
+
+	 \overload
+	 */
+	InputStream &operator>>( std::wstring &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const bool &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const int8_t &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const uint8_t &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const int16_t &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const uint16_t &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const int32_t &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const uint32_t &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const int64_t &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const uint64_t &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const float &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const double &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const char &data );
+
+	/*!
+	 \brief Write data into the buffer from an array.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const char *data );
+
+	/*!
+	 \brief Write data into the buffer from an object.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const std::string &data );
+
+	/*!
+	 \brief Write data into the buffer from a variable.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const wchar_t &data );
+
+	/*!
+	 \brief Write data into the buffer from an array.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const wchar_t *data );
+
+	/*!
+	 \brief Write data into the buffer from an object.
+
+	 \param data Data to write.
+
+	 \return This object.
+
+	 \overload
+	 */
+	OutputStream &operator<<( const std::wstring &data );
 
 protected:
-	std::set<Subscriber *> attached_subscribers;
 	std::shared_ptr<FileInternal> file_internal;
 };
 

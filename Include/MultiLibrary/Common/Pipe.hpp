@@ -36,38 +36,99 @@
 
 #pragma once
 
-#include <MultiLibrary/Media/Export.hpp>
-#include <MultiLibrary/Media/SoundSource.hpp>
-#include <chrono>
+#include <MultiLibrary/Common/Export.hpp>
+#include <MultiLibrary/Common/NonCopyable.hpp>
+#include <MultiLibrary/Common/IOStream.hpp>
+#include <set>
 
 namespace MultiLibrary
 {
 
-class SoundBuffer;
-
-class MULTILIBRARY_MEDIA_API Sound : public SoundSource
+/*!
+ \brief A class that wraps the operating system's pipe functionality.
+ */
+class MULTILIBRARY_COMMON_API Pipe : public IOStream, public NonCopyable
 {
 public:
-	Sound( );
-	virtual ~Sound( );
+	Pipe( void *read, void *write );
 
-	void Play( );
-	void Pause( );
-	void Stop( );
+	/*!
+	 \brief Create a pipe with the specified inheritances.
 
-	void SetBuffer( SoundBuffer &soundbuffer );
-	const SoundBuffer &GetBuffer( );
+	 \param read_inheritable Should the read handle be inheritable
+	 \param write_inheritable Should the write handle be inheritable
+	 */
+	Pipe( bool read_inheritable = false, bool write_inheritable = false );
 
-	void SetLoop( bool loop );
-	bool GetLoop( );
+	/*!
+	 \brief Destructor.
 
-	void SetPlayingOffset( const std::chrono::microseconds &timeOffset );
-	std::chrono::microseconds GetPlayingOffset( );
+	 Subscribers are alerted to this object destruction, if any.
+	 */
+	~Pipe( );
 
-	void ResetPublisher( );
+	bool IsValid( ) const;
+
+	/*!
+	 \brief Set the current position for read/write operations.
+
+	 \param position Position value.
+	 \param mode (Optional) Type of seeking pretended.
+
+	 \return true if it succeeds, false if it fails.
+	 */
+	bool Seek( int64_t position, SeekMode mode = SEEKMODE_SET );
+
+	/*!
+	 \brief Get the current position.
+
+	 \return Current position.
+	 */
+	int64_t Tell( ) const;
+
+	/*!
+	 \brief Get the size.
+
+	 \return Size of internal data.
+	 */
+	int64_t Size( ) const;
+
+	/*!
+	 \brief Return whether we reached end of file or not.
+
+	 \return true if we reached end of file, false otherwise.
+	 */
+	bool EndOfFile( ) const;
+
+	/*!
+	 \brief Reads the specified amount of bytes into the provided buffer.
+
+	 \param data Buffer to store the data.
+	 \param size Size of the buffer.
+
+	 \return Amount of read bytes.
+	 */
+	size_t Read( void *data, size_t size );
+
+	/*!
+	 \brief Writes the specified amount of bytes from the provided buffer.
+
+	 \param data Data to write.
+	 \param size Size of the data.
+
+	 \return Amount of written bytes.
+	 */
+	size_t Write( const void *data, size_t size );
+
+	void *ReadHandle( ) const;
+	void *WriteHandle( ) const;
+
+	void CloseRead( );
+	void CloseWrite( );
 
 private:
-	SoundBuffer *sound_buffer;
+	void *read_handle;
+	void *write_handle;
 };
 
 } // namespace MultiLibrary

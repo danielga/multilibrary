@@ -134,11 +134,11 @@ File Filesystem::Open( const std::string &path, const char *mode )
 
 	FILE *file = _wfopen( widepath.c_str( ), widemode.c_str( ) );
 	if( file == nullptr )
-		return File( nullptr );
+		return File( std::shared_ptr<FileInternal>( ) );
 
 	FileSimple *finternal = new FileSimple( this, file, path );
 	open_files.push_back( finternal );
-	return File( finternal );
+	return File( std::shared_ptr<FileInternal>( finternal ) );
 }
 
 int64_t Filesystem::Size( const std::string &path )
@@ -158,18 +158,6 @@ bool Filesystem::Exists( const std::string &path )
 	File file = Open( path, "r" );
 	if( file.IsValid( ) )
 	{
-		file.Close( );
-		return true;
-	}
-
-	return false;
-}
-
-bool Filesystem::CreateFile( const std::string &path, bool overwrite )
-{
-	if( overwrite || !Exists( path ) )
-	{
-		File file = Open( path, "w" );
 		file.Close( );
 		return true;
 	}

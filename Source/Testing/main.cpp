@@ -121,7 +121,7 @@ static void TestStrings( )
 static void TestFilesystem( )
 {
 	ML::Filesystem fs;
-	ML::File file1 = fs.Open( "D:\\Programming\\MultiLibrary\\file.pak", "wb" );
+	ML::File file1 = fs.Open( "file.pak", "wb" );
 	file1.Close( );
 
 	std::cout << ML::Filesystem::GetExecutablePath( ) << "\n";
@@ -265,27 +265,15 @@ static void TestWindow( )
 
 static void TestProcess( )
 {
-	ML::Process process;
-	if( !process.Start( "child.exe" ) )
-		return;
+	ML::Process process( "Child.exe" );
 
-	process.Input( ) << "nope\r\n" << "nein\r\n" << "nyet\r\n" << static_cast<int32_t>( 70000 ) << "\r\n";
+	ML::Pipe &input = process.Input( );
+	input << "nope\n" << "nein\n" << "nyet\n" << "nada\n" << static_cast<int32_t>( 56 ) << true;
 	process.CloseInput( );
 
-	std::string str;
-	while( !process.Wait( std::chrono::microseconds::zero( ) ) )
-	{
-		if( std::getline( process.Output( ), str ).good( ) )
-			std::cout << str.substr( 0, str.size( ) - 1 ) << '\n';
-		else
-			process.Output( ).clear( );
+	while( !process.Wait( std::chrono::milliseconds( 10 ) ) );
 
-		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
-	}
-
-	// after process exits, keep chugging at the output
-	while( std::getline( process.Output( ), str ).good( ) )
-		std::cout << str.substr( 0, str.size( ) - 1 ) << '\n';
+	std::cout << "Exit code: " << process.ExitCode( );
 }
 
 int main( int, char ** )
@@ -294,7 +282,7 @@ int main( int, char ** )
 	//TestStrings( );
 	//TestFilesystem( );
 	//TestAudio( );
-	TestWindow( );
-	//TestProcess( );
+	//TestWindow( );
+	TestProcess( );
 	return 0;
 }

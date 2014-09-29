@@ -39,8 +39,6 @@
 #include <MultiLibrary/Filesystem/Export.hpp>
 #include <MultiLibrary/Filesystem/FileInternal.hpp>
 #include <string>
-#include <atomic>
-#include <cstdio>
 
 namespace MultiLibrary
 {
@@ -65,11 +63,13 @@ public:
 	bool EndOfFile( ) const;
 
 	size_t Read( void *data, size_t size );
+	int Scan( const char *format, ... );
 	size_t Write( const void *data, size_t size );
+	int Print( const char *format, ... );
 
 private:
 	Filesystem *parent_filesystem;
-	std::atomic<FILE *> file_pointer;
+	void *file_pointer;
 	std::string file_path;
 };
 
