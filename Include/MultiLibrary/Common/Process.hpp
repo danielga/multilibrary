@@ -53,15 +53,21 @@ namespace MultiLibrary
 class MULTILIBRARY_COMMON_API Process : public NonCopyable
 {
 public:
-	/*!
-	 \brief Default constructor.
-	 */
-	Process( const std::string &path, const std::string &args = "" );
+	enum class Status
+	{
+		Unknown = -1,
+		Running,
+		Terminated,
+		Killed
+	};
 
 	/*!
-	 \brief Default constructor.
+	 \brief Constructor.
+
+	 \param path Executable path.
+	 \param args Arguments to send to the executable.
 	 */
-	Process( const std::string &path, const std::vector<std::string> &args );
+	Process( const std::string &path, const std::vector<std::string> &args = std::vector<std::string>( ) );
 
 	/*!
 	 \brief Destructor.
@@ -71,13 +77,11 @@ public:
 	~Process( );
 
 	/*!
-	 \brief Wait for the process to finish.
+	 \brief Get process status.
 
-	 \param timeout Time to wait before bailing.
-
-	 \return true if the process exited before the timeout, false otherwise.
+	 \return status of the process
 	 */
-	bool Wait( const std::chrono::microseconds &timeout );
+	Status GetStatus( ) const;
 
 	/*!
 	 \brief Close this process.
@@ -127,16 +131,6 @@ public:
 	int32_t ExitCode( ) const;
 
 private:
-	/*!
-	 \brief Starts the given executable.
-
-	 The arguments are provided in a single string.
-
-	 \param path Executable path.
-	 \param args Arguments to send to the executable.
-	 */
-	void Start( const std::string &path, const std::string &args );
-
 	void *process;
 	int32_t exit_code;
 	Pipe input_pipe;

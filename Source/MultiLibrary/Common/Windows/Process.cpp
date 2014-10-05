@@ -36,7 +36,6 @@
 
 #include <MultiLibrary/Common/Process.hpp>
 #include <MultiLibrary/Common/Unicode.hpp>
-#include <stdexcept>
 #include <system_error>
 #include <windows.h>
 
@@ -53,55 +52,23 @@ void CloseHandle( void *handle )
 
 } // namespace Internal
 
-Process::Process( const std::string &path, const std::string &args ) :
-	process( nullptr ),
-	exit_code( 0 ),
-	input_pipe( true, false ),
-	output_pipe( false, true ),
-	error_pipe( false, true )
-{
-	Start( path, args );
-}
-
 Process::Process( const std::string &path, const std::vector<std::string> &args ) :
 	process( nullptr ),
 	exit_code( 0 )
 {
-	std::string targs;
-
-	std::vector<std::string>::const_iterator it, begin = args.begin( ), end = args.end( );
-	for( it = begin; it != end; ++it )
-	{
-		targs.reserve( targs.size( ) + ( *it ).size( ) + 3 );
-
-		if( it != begin )
-			targs += ' ';
-
-		targs += '\"';
-		targs += *it;
-		targs += '\"';
-	}
-
-	Start( path, targs );
-}
-
-Process::~Process( )
-{
-	Close( );
-}
-
-void Process::Start( const std::string &path, const std::string &args )
-{
 	std::string cmdline;
-	cmdline.reserve( path.size( ) + 3 + args.size( ) );
+	cmdline.reserve( path.size( ) + 3 );
 	cmdline += '\"';
 	cmdline += path;
 	cmdline += '\"';
 
-	if( !args.empty( ) )
+	std::vector<std::string>::const_iterator it, end = args.end( );
+	for( it = args.begin( ); it != end; ++it )
 	{
 		cmdline += ' ';
-		cmdline += args;
+		cmdline += '\"';
+		cmdline += *it;
+		cmdline += '\"';
 	}
 
 	std::wstring widecmdline;
@@ -126,13 +93,17 @@ void Process::Start( const std::string &path, const std::string &args )
 	process = info.hProcess;
 }
 
-bool Process::Wait( const std::chrono::microseconds &timeout )
+Process::~Process( )
+{
+	Close( );
+}
+
+Process::Status Process::GetStatus( ) const
 {
 	if( process == nullptr )
-		return true;
+		return Status::Unknown;
 
-	std::chrono::milliseconds millisecs = std::chrono::duration_cast<std::chrono::milliseconds>( timeout );
-	return WaitForSingleObject( process, static_cast<DWORD>( millisecs.count( ) ) ) == WAIT_OBJECT_0;
+	return WaitForSingleObject( process, 0 ) == WAIT_OBJECT_0 ? Status::Terminated : Status::Running;
 }
 
 bool Process::Close( )

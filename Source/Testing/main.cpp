@@ -271,7 +271,8 @@ static void TestProcess( )
 	input << "nope\n" << "nein\n" << "nyet\n" << "nada\n" << static_cast<int32_t>( 56 ) << true;
 	process.CloseInput( );
 
-	while( !process.Wait( std::chrono::milliseconds( 10 ) ) );
+	while( process.GetStatus( ) != ML::Process::Status::Terminated )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
 
 	std::cout << "Exit code: " << process.ExitCode( );
 }
