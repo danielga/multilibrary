@@ -111,7 +111,7 @@ SocketError Socket::Accept( Socket &socket, IPAddress &address )
 		return ENOTSOCK;
 
 	address.SetFamily( address_family );
-	socklen_t address_size = address.GetAddressSize( );
+	socklen_t address_size = static_cast<socklen_t>( address.GetAddressSize( ) );
 
 	SocketHandle newSocket = accept( socket_id, address.GetSocketAddress( ), &address_size );
 	if( newSocket != INVALID_SOCKET )
@@ -125,7 +125,7 @@ SocketError Socket::Bind( const IPAddress &address )
 	if( !IsValid( ) )
 		return ENOTSOCK;
 
-	int ret = bind( socket_id, address.ToSocketAddress( ), address.GetAddressSize( ) );
+	int ret = bind( socket_id, address.ToSocketAddress( ), static_cast<socklen_t>( address.GetAddressSize( ) ) );
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
 }
 
@@ -171,7 +171,7 @@ SocketError Socket::Connect( const IPAddress &address )
 	if( !IsValid( ) )
 		return ENOTSOCK;
 
-	int ret = connect( socket_id, address.ToSocketAddress( ), address.GetAddressSize( ) );
+	int ret = connect( socket_id, address.ToSocketAddress( ), static_cast<socklen_t>( address.GetAddressSize( ) ) );
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
 }
 
@@ -185,9 +185,9 @@ bool Socket::IsValid( ) const
 	return socket_id != INVALID_SOCKET;
 }
 
-Socket::operator unspecified_bool_type( ) const
+Socket::operator bool( ) const
 {
-	return IsValid( ) ? unspecified_bool_true : 0;
+	return IsValid( );
 }
 
 bool Socket::operator!( ) const
@@ -241,7 +241,7 @@ SocketError Socket::ReceiveFrom( void *buffer, int size, int flags, IPAddress &a
 
 	address.SetFamily( address_family );
 	sockaddr *addr = address.GetSocketAddress( );
-	socklen_t addr_size = address.GetAddressSize( );
+	socklen_t addr_size = static_cast<socklen_t>( address.GetAddressSize( ) );
 
 	int ret = recvfrom( socket_id, static_cast<char *>( buffer ), size, flags, addr, &addr_size );
 	if( ret != SOCKET_ERROR && received_bytes != nullptr )
@@ -258,7 +258,7 @@ SocketError Socket::ReceiveFrom( ByteBuffer &buffer, int flags, IPAddress &addre
 	char *buf = reinterpret_cast<char *>( buffer.GetBuffer( ) );
 	address.SetFamily( address_family );
 	sockaddr *addr = address.GetSocketAddress( );
-	socklen_t addr_size = address.GetAddressSize( );
+	socklen_t addr_size = static_cast<socklen_t>( address.GetAddressSize( ) );
 
 	int ret = recvfrom( socket_id, buf, static_cast<int>( buffer.Size( ) ), flags, addr, &addr_size );
 	if( ret != SOCKET_ERROR )
@@ -289,7 +289,7 @@ IPAddress Socket::RemoteIPAddress( ) const
 		return IPAddress( );
 
 	IPAddress addr( address_family );
-	socklen_t addr_size = addr.GetAddressSize( );
+	socklen_t addr_size = static_cast<socklen_t>( addr.GetAddressSize( ) );
 
 	if( getpeername( socket_id, addr.GetSocketAddress( ), &addr_size ) != SOCKET_ERROR )
 		return addr;
@@ -329,7 +329,7 @@ SocketError Socket::SendTo( const void *buffer, int size, int flags, const IPAdd
 		return ENOTSOCK;
 
 	const sockaddr *addr = address.ToSocketAddress( );
-	socklen_t addr_size = address.GetAddressSize( );
+	socklen_t addr_size = static_cast<socklen_t>( address.GetAddressSize( ) );
 
 	int ret = sendto( socket_id, static_cast<const char *>( buffer ), size, flags, addr, addr_size );
 	if( ret != SOCKET_ERROR && sent_bytes != nullptr )
@@ -345,7 +345,7 @@ SocketError Socket::SendTo( const ByteBuffer &buffer, int flags, const IPAddress
 
 	const char *buf = reinterpret_cast<const char *>( buffer.GetBuffer( ) );
 	const sockaddr *addr = address.ToSocketAddress( );
-	socklen_t addr_size = address.GetAddressSize( );
+	socklen_t addr_size = static_cast<socklen_t>( address.GetAddressSize( ) );
 
 	int ret = sendto( socket_id, buf, static_cast<int>( buffer.Size( ) ), flags, addr, addr_size );
 	if( ret != SOCKET_ERROR && sent_bytes != nullptr )

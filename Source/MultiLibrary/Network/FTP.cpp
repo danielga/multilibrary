@@ -105,7 +105,7 @@ public:
 	void Send( const std::vector<char> &data )
 	{
 		if( !data.empty( ) )
-			socket.Send( &data[0], data.size( ), 0 );
+			socket.Send( &data[0], static_cast<int>( data.size( ) ), 0 );
 
 		socket.Close( );
 	}
@@ -364,7 +364,7 @@ FTP::Response FTP::SendCommand( const std::string &command, const std::string &p
 	else
 		commandStr = command + "\r\n";
 
-	if( connection_socket.Send( commandStr.c_str( ), commandStr.length( ), 0 ) )
+	if( connection_socket.Send( commandStr.c_str( ), static_cast<int>( commandStr.length( ) ), 0 ) )
 		return Response( Response::ConnectionClosed );
 
 	return GetResponse( );
