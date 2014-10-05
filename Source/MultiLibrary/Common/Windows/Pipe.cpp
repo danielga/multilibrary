@@ -125,7 +125,7 @@ size_t Pipe::Write( const void *data, size_t size )
 		return 0;
 
 	DWORD written = 0;
-	WriteFile( write_handle, data, size, &written, nullptr );
+	WriteFile( write_handle, data, static_cast<DWORD>( size ), &written, nullptr );
 	return written;
 }
 

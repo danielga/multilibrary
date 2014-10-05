@@ -82,32 +82,29 @@ public:
 
 	virtual IPAddressFamily GetAddressFamily( ) const;
 
-	typedef void ( *unspecified_bool_type ) ( );
-	static void unspecified_bool_true( ) { }
-
 	virtual bool IsValid( ) const;
-	virtual operator unspecified_bool_type( ) const;
-	virtual bool operator!( ) const;
+	explicit operator bool( ) const;
+	bool operator!( ) const;
 
 	virtual SocketError Listen( int max_con_requests );
 
 	virtual bool Open( );
 
-	virtual SocketError Receive( void *buffer, int size, int flags, int *received_bytes = 0 );
+	virtual SocketError Receive( void *buffer, int size, int flags, int *received_bytes = nullptr );
 	virtual SocketError Receive( ByteBuffer &buffer, int flags );
 
-	virtual SocketError ReceiveFrom( void *buffer, int size, int flags, IPAddress &address, int *received_bytes = 0 );
+	virtual SocketError ReceiveFrom( void *buffer, int size, int flags, IPAddress &address, int *received_bytes = nullptr );
 	virtual SocketError ReceiveFrom( ByteBuffer &buffer, int flags, IPAddress &address );
 
 	virtual std::string RemoteAddress( ) const;
 	virtual uint16_t RemotePort( ) const;
 	virtual IPAddress RemoteIPAddress( ) const;
 
-	virtual SocketError Send( const void *buffer, int size, int flags, int *sent_bytes = 0 );
-	virtual SocketError Send( const ByteBuffer &buffer, int flags, int *sent_bytes = 0 );
+	virtual SocketError Send( const void *buffer, int size, int flags, int *sent_bytes = nullptr );
+	virtual SocketError Send( const ByteBuffer &buffer, int flags, int *sent_bytes = nullptr );
 
-	virtual SocketError SendTo( const void *buffer, int size, int flags, const IPAddress &address, int *sent_bytes = 0 );
-	virtual SocketError SendTo( const ByteBuffer &buffer, int flags, const IPAddress &address, int *sent_bytes = 0 );
+	virtual SocketError SendTo( const void *buffer, int size, int flags, const IPAddress &address, int *sent_bytes = nullptr );
+	virtual SocketError SendTo( const ByteBuffer &buffer, int flags, const IPAddress &address, int *sent_bytes = nullptr );
 
 	virtual SocketError SetBlocking( bool block );
 	virtual SocketError SetTimeout( uint32_t timeout );

@@ -585,7 +585,7 @@ int MediaDecoder::InternalMemoryRead( void *opaque, uint8_t *buf, int buf_size )
 			copy_size = remaining;
 		std::memcpy( buf, &decoder->memory_buffer[decoder->memory_pos], copy_size );
 		decoder->memory_pos += copy_size;
-		return copy_size;
+		return static_cast<int>( copy_size );
 	}
 	else if( decoder->decoding_mode == DECODEMODE_STREAM )
 	{
