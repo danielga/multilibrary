@@ -34,35 +34,11 @@
  *
  *************************************************************************/
 
-#pragma once
-
-#include <MultiLibrary/Common/Export.hpp>
+#include <MultiLibrary/Common/Pipe.hpp>
 
 namespace MultiLibrary
 {
 
-class Publisher;
 
-/*!
- \brief An interface for objects that want to subscribe others.
-
- The general idea of this is that if you want to use an object and you
- have no idea when it'll be destroyed, you subscribe to it and it'll
- tell you when it's being destroyed. This prevents crashes caused by,
- for example, streaming an audio file through an object and that object
- is suddenly destroyed.
- Of course, if you properly code your program, you'll never have to use
- this.
- */
-class Subscriber
-{
-public:
-	/*!
-	 \brief Reset the publisher object.
-
-	 This is called by publishers to warn the subscriber of their destruction.
-	 */
-	virtual void ResetPublisher( ) = 0;
-};
 
 } // namespace MultiLibrary

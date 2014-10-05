@@ -35,10 +35,10 @@
  *************************************************************************/
 
 #include <MultiLibrary/Common/Pipe.hpp>
-#include <MultiLibrary/Common/Unicode.hpp>
-#include <stdexcept>
-#include <system_error>
-#include <windows.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/select.h>
+#include <sys/ioctl.h>
 
 namespace MultiLibrary
 {
@@ -48,27 +48,18 @@ Pipe::Pipe( void *read, void *write ) :
 	write_handle( write )
 { }
 
-Pipe::Pipe( bool read_inheritable, bool write_inheritable ) :
-	read_handle( nullptr ),
-	write_handle( nullptr )
+Pipe::Pipe( bool, bool ) :
+	read_handle( 0 ),
+	write_handle( 0 )
 {
-	SECURITY_ATTRIBUTES sa;
-	sa.nLength = static_cast<DWORD>( sizeof( SECURITY_ATTRIBUTES ) );
-	sa.bInheritHandle = FALSE;
-	sa.lpSecurityDescriptor = nullptr;
-
-	HANDLE read = nullptr, write = nullptr;
-	if( CreatePipe( &read, &write, &sa, 0 ) == FALSE )
-		throw std::system_error( GetLastError( ), std::system_category( ), "unable to create pipe" );
-
-	read_handle = read;
-	write_handle = write;
-
-	if( read_inheritable && SetHandleInformation( read, HANDLE_FLAG_INHERIT, TRUE ) == FALSE )
-		throw std::system_error( GetLastError( ), std::system_category( ), "unable to set pipe write handle flag" );
-
-	if( write_inheritable && SetHandleInformation( write, HANDLE_FLAG_INHERIT, TRUE ) == FALSE )
-		throw std::system_error( GetLastError( ), std::system_category( ), "unable to set pipe read handle flag" );
+	int handles[2] = { 0, 0 };
+	if( pipe( handles ) == 0 )
+	{
+		fcntl( handles[0], F_SETFD, FD_CLOEXEC );
+		fcntl( handles[1], F_SETFD, FD_CLOEXEC );
+		read_handle = reinterpret_cast<void *>( handles[0] );
+		write_handle = reinterpret_cast<void *>( handles[1] );
+	}
 }
 
 Pipe::~Pipe( )
@@ -79,7 +70,7 @@ Pipe::~Pipe( )
 
 bool Pipe::IsValid( ) const
 {
-	return read_handle != nullptr || write_handle != nullptr;
+	return read_handle != 0 || write_handle != 0;
 }
 
 bool Pipe::Seek( int64_t, SeekMode )
@@ -94,39 +85,48 @@ int64_t Pipe::Tell( ) const
 
 int64_t Pipe::Size( ) const
 {
-	if( read_handle == nullptr )
+	int size = 0;
+	if( ioctl( reinterpret_cast<int>( read_handle ), FIONREAD, &size ) == 0 )
 		return 0;
 
-	DWORD avail = 0;
-	PeekNamedPipe( read_handle, nullptr, 0, nullptr, &avail, nullptr );
-	return avail;
+	return 0;
 }
 
 bool Pipe::EndOfFile( ) const
 {
-	return read_handle == nullptr;
+	return read_handle == 0;
 }
 
 size_t Pipe::Read( void *data, size_t size )
 {
-	if( read_handle == nullptr )
-		return 0;
+	fd_set rfds;
+	FD_ZERO( &rfds );
+	FD_SET( reinterpret_cast<int>( read_handle ), &rfds );
+	timeval time = { 0, 0 };
+	if( select( 1, &rfds, nullptr, nullptr, &time ) == 1 )
+	{
+		ssize_t res = read( reinterpret_cast<int>( read_handle ), data, size );
+		if( res >= 0 )
+			return res;
+	}
 
-	DWORD avail = static_cast<DWORD>( Size( ) );
-	if( avail > 0 && ReadFile( read_handle, data, avail < size ? avail : static_cast<DWORD>( size ), &avail, nullptr ) == FALSE )
-		return 0;
-
-	return avail;
+	return 0;
 }
 
 size_t Pipe::Write( const void *data, size_t size )
 {
-	if( write_handle == nullptr )
-		return 0;
+	fd_set rfds;
+	FD_ZERO( &rfds );
+	FD_SET( reinterpret_cast<int>( write_handle ), &rfds );
+	timeval time = { 0, 0 };
+	if( select( 1, nullptr, &rfds, nullptr, &time ) == 1 )
+	{
+		ssize_t res = write( reinterpret_cast<int>( write_handle ), data, size );
+		if( res >= 0 )
+			return res;
+	}
 
-	DWORD written = 0;
-	WriteFile( write_handle, data, size, &written, nullptr );
-	return written;
+	return 0;
 }
 
 void *Pipe::ReadHandle( ) const
@@ -141,14 +141,20 @@ void *Pipe::WriteHandle( ) const
 
 void Pipe::CloseRead( )
 {
-	CloseHandle( read_handle );
-	read_handle = nullptr;
+	if( read_handle != 0 )
+	{
+		close( reinterpret_cast<int>( read_handle ) );
+		read_handle = 0;
+	}
 }
 
 void Pipe::CloseWrite( )
 {
-	CloseHandle( write_handle );
-	write_handle = nullptr;
+	if( write_handle != 0 )
+	{
+		close( reinterpret_cast<int>( write_handle ) );
+		write_handle = 0;
+	}
 }
 
 } // namespace MultiLibrary

@@ -254,50 +254,58 @@ std::string IPAddress::ToString( ) const
 	{
 		case FAMILY_INET:
 		{
-			std::wstring waddress( INET_ADDRSTRLEN, L'\0' );
 
 #if defined _WIN32
 
+			std::wstring waddress( INET_ADDRSTRLEN, L'\0' );
 			DWORD size = INET_ADDRSTRLEN;
 			if( WSAAddressToString( reinterpret_cast<sockaddr *>( host_address ), sizeof( sockaddr_in ), nullptr, &waddress[0], &size ) == 0 )
-
-#elif defined __APPLE__ || defined __linux
-
-			in_addr *haddress = &reinterpret_cast<sockaddr_in *>( host_address )->sin_addr;
-			if( inet_ntop( AF_INET, haddress, &waddress[0], INET_ADDRSTRLEN ) != nullptr )
-
-#endif
-
 			{
 				waddress.resize( size - 1 );
 				UTF8::FromWideString( waddress.begin( ), waddress.end( ), std::back_inserter( address ) );
 				return address;
 			}
+
+#elif defined __APPLE__ || defined __linux
+
+			address.resize( INET_ADDRSTRLEN );
+			in_addr *haddress = &reinterpret_cast<sockaddr_in *>( host_address )->sin_addr;
+			if( inet_ntop( AF_INET, haddress, &address[0], INET_ADDRSTRLEN ) != nullptr )
+			{
+				address.resize( std::strlen( address.c_str( ) ) );
+				return address;
+			}
+
+#endif
 
 			break;
 		}
 
 		case FAMILY_INET6:
 		{
-			std::wstring waddress( INET6_ADDRSTRLEN, L'\0' );
 
 #if defined _WIN32
 
+			std::wstring waddress( INET6_ADDRSTRLEN, L'\0' );
 			DWORD size = INET6_ADDRSTRLEN;
 			if( WSAAddressToString( reinterpret_cast<sockaddr *>( host_address ), sizeof( sockaddr_in6 ), nullptr, &waddress[0], &size ) == 0 )
-
-#elif defined __APPLE__ || defined __linux
-
-			in6_addr *haddress = &reinterpret_cast<sockaddr_in6 *>( host_address )->sin6_addr;
-			if( inet_ntop( AF_INET6, haddress, &waddress[0], INET6_ADDRSTRLEN ) != nullptr )
-
-#endif
-
 			{
 				waddress.resize( size - 1 );
 				UTF8::FromWideString( waddress.begin( ), waddress.end( ), std::back_inserter( address ) );
 				return address;
 			}
+
+#elif defined __APPLE__ || defined __linux
+
+			address.resize( INET6_ADDRSTRLEN );
+			in6_addr *haddress = &reinterpret_cast<sockaddr_in6 *>( host_address )->sin6_addr;
+			if( inet_ntop( AF_INET6, haddress, &address[0], INET6_ADDRSTRLEN ) != nullptr )
+			{
+				address.resize( std::strlen( address.c_str( ) ) );
+				return address;
+			}
+
+#endif
 
 			break;
 		}
@@ -377,7 +385,8 @@ bool IPAddress::ResolveString( const std::string &address )
 
 	addrinfo *result = nullptr;
 
-	addrinfo hints = { 0 };
+	addrinfo hints;
+	std::memset( &hints, 0, sizeof( hints ) );
 	hints.ai_family = AF_INET;
 	if( getaddrinfo( address.c_str( ), nullptr, &hints, &result ) == 0 && result != nullptr )
 	{
@@ -391,7 +400,8 @@ bool IPAddress::ResolveString( const std::string &address )
 		return true;
 	}
 
-	addrinfo hints6 = { 0 };
+	addrinfo hints6;
+	std::memset( &hints6, 0, sizeof( hints6 ) );
 	hints6.ai_family = AF_INET6;
 	if( getaddrinfo( address.c_str( ), nullptr, &hints6, &result ) == 0 && result != nullptr )
 	{

@@ -23,6 +23,11 @@ newoption({
 })
 
 newoption({
+	trigger = "compile-glew",
+	description = "Compile GLEW ourselves instead of linking"
+})
+
+newoption({
 	trigger = "thirdparty-folder",
 	value = "thirdparty (default)",
 	description = "Sets the path of third-party libraries relative to the current system projects folder (\"thirdparty\" would use \"Projects/windows/thirdparty\", for example, on Windows)."
@@ -48,6 +53,9 @@ solution("MultiLibrary")
 	filter("platforms:x64")
 		architecture("x64")
 
+	filter("options:static-runtime")
+		flags({"StaticRuntime"})
+
 	filter("system:windows")
 		defines({"UNICODE", "_UNICODE", "WIN32_LEAN_AND_MEAN", "WINVER=0x0601", "_WIN32_WINNT=0x0601", "_CRT_SECURE_NO_DEPRECATE"})
 		includedirs({THIRDPARTY_FOLDER .. "/include"})
@@ -56,15 +64,6 @@ solution("MultiLibrary")
 			libdirs({THIRDPARTY_FOLDER .. "/lib/x86"})
 
 		filter({"system:windows", "platforms:x64"})
-			libdirs({THIRDPARTY_FOLDER .. "/lib/x64"})
-
-	filter("system:macosx")
-		includedirs({THIRDPARTY_FOLDER .. "/include"})
-
-		filter({"system:macosx", "platforms:x86"})
-			libdirs({THIRDPARTY_FOLDER .. "/lib/x86"})
-
-		filter({"system:macosx", "platforms:x64"})
 			libdirs({THIRDPARTY_FOLDER .. "/lib/x64"})
 
 	filter("configurations:Release")
@@ -133,20 +132,21 @@ solution("MultiLibrary")
 	project("Testing")
 		uuid("A9FBF5DC-08A5-1840-9169-FA049E25EBA7")
 		kind("ConsoleApp")
-		defines({"GLEW_STATIC"})
 		includedirs({INCLUDE_FOLDER})
-		vpaths({["Sources"] = {SOURCE_FOLDER .. "/Testing/**.cpp", THIRDPARTY_FOLDER .. "/src/**.c"}})
-		files({SOURCE_FOLDER .. "/Testing/main.cpp", THIRDPARTY_FOLDER .. "/src/glew.c"})
+		vpaths({["Sources"] = SOURCE_FOLDER .. "/Testing/**.cpp"})
+		files({SOURCE_FOLDER .. "/Testing/main.cpp"})
 		links({"Media", "Filesystem", "Network", "Window", "Visual", "Common"})
+
+		filter("options:compile-glew")
+			defines({"GLEW_STATIC"})
+			vpaths({["Sources"] = THIRDPARTY_FOLDER .. "/src/**.c"})
+			files({THIRDPARTY_FOLDER .. "/src/glew.c"})
 
 		filter({"system:windows", "configurations:StaticDebug or StaticRelease"})
 			links({"avcodec", "avformat", "avutil", "swscale", "swresample", "openal32", "ws2_32", "opengl32", "gdi32"})
 
 		filter({"system:windows", "configurations:Debug or Release"})
 			links({"opengl32"})
-
-		--filter("system:linux")
-			--linkoptions({"-Wl,-rpath=./"})
 
 		filter({"system:linux", "configurations:StaticDebug or StaticRelease"})
 			links({"pthread", "avcodec", "avformat", "avutil", "swscale", "swresample", "openal", "GL"})
@@ -231,8 +231,11 @@ solution("MultiLibrary")
 			filter({"system:windows", "configurations:Debug or Release"})
 				links({"Common", "avcodec", "avformat", "avutil", "swscale", "swresample", "openal32"})
 
-			filter({"system:linux", "configurations:Debug or Release"})
-				links({"Common", "avcodec", "avformat", "avutil", "swscale", "swresample", "openal"})
+			filter("system:linux")
+				includedirs({"/usr/include/ffmpeg"})
+
+				filter({"system:linux", "configurations:Debug or Release"})
+					links({"Common", "avcodec", "avformat", "avutil", "swscale", "swresample", "openal"})
 
 			filter({"system:macosx", "configurations:Debug or Release"})
 				links({"Common", "avcodec", "avformat", "avutil", "swscale", "swresample"})
@@ -315,17 +318,14 @@ solution("MultiLibrary")
 		project("Window")
 			uuid("B4B2441D-77C4-7A4E-9A89-319CE6A0F2E3")
 			targetname("MultiLibraryWindow")
-			defines({"MULTILIBRARY_WINDOW_EXPORT", "GLEW_STATIC"})
+			defines({"MULTILIBRARY_WINDOW_EXPORT"})
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
 				["Headers"] = {
 					SOURCE_FOLDER .. "/MultiLibrary/**.hpp",
 					INCLUDE_FOLDER .. "/MultiLibrary/**.hpp"
 				},
-				["Sources"] = {
-					SOURCE_FOLDER .. "/MultiLibrary/**.cpp",
-					THIRDPARTY_FOLDER .. "/src/**.c"
-				}
+				["Sources"] = SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
 			})
 			files({
 				SOURCE_FOLDER .. "/MultiLibrary/Window/*.cpp",
@@ -334,11 +334,15 @@ solution("MultiLibrary")
 				INCLUDE_FOLDER .. "/MultiLibrary/Window.hpp"
 			})
 
+			filter("options:compile-glew")
+				defines({"GLEW_STATIC"})
+				vpaths({["Sources"] = THIRDPARTY_FOLDER .. "/src/**.c"})
+				files({THIRDPARTY_FOLDER .. "/src/glew.c"})
+
 			filter("system:windows")
 				files({
 					SOURCE_FOLDER .. "/MultiLibrary/Window/Windows/*.cpp",
-					SOURCE_FOLDER .. "/MultiLibrary/Window/Windows/*.hpp",
-					THIRDPARTY_FOLDER .. "/src/glew.c"
+					SOURCE_FOLDER .. "/MultiLibrary/Window/Windows/*.hpp"
 				})
 
 				filter({"system:windows", "configurations:Debug or Release"})
@@ -347,8 +351,7 @@ solution("MultiLibrary")
 			filter("system:linux")
 				files({
 					SOURCE_FOLDER .. "/MultiLibrary/Window/Linux/*.cpp",
-					SOURCE_FOLDER .. "/MultiLibrary/Window/Linux/*.hpp",
-					THIRDPARTY_FOLDER .. "/src/glew.c"
+					SOURCE_FOLDER .. "/MultiLibrary/Window/Linux/*.hpp"
 				})
 
 				filter({"system:linux", "configurations:Debug or Release"})
@@ -357,8 +360,7 @@ solution("MultiLibrary")
 			filter("system:macosx")
 				files({
 					SOURCE_FOLDER .. "/MultiLibrary/Window/MacOSX/*.cpp",
-					SOURCE_FOLDER .. "/MultiLibrary/Window/MacOSX/*.hpp",
-					THIRDPARTY_FOLDER .. "/src/glew.c"
+					SOURCE_FOLDER .. "/MultiLibrary/Window/MacOSX/*.hpp"
 				})
 
 				filter({"system:macosx", "configurations:Debug or Release"})
@@ -368,7 +370,7 @@ solution("MultiLibrary")
 		project("Visual")
 			uuid("64CE3AA5-430D-9548-8D34-58F982E583EF")
 			targetname("MultiLibraryVisual")
-			defines({"MULTILIBRARY_VISUAL_EXPORT", "GLEW_STATIC"})
+			defines({"MULTILIBRARY_VISUAL_EXPORT"})
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
 				["Headers"] = {
@@ -376,17 +378,20 @@ solution("MultiLibrary")
 					INCLUDE_FOLDER .. "/MultiLibrary/**.hpp"
 				},
 				["Sources"] = {
-					SOURCE_FOLDER .. "/MultiLibrary/**.cpp",
-					THIRDPARTY_FOLDER .. "/src/**.c"
+					SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
 				}
 			})
 			files({
 				SOURCE_FOLDER .. "/MultiLibrary/Visual/*.cpp",
 				SOURCE_FOLDER .. "/MultiLibrary/Visual/*.hpp",
 				INCLUDE_FOLDER .. "/MultiLibrary/Visual/*.hpp",
-				INCLUDE_FOLDER .. "/MultiLibrary/Visual.hpp",
-				THIRDPARTY_FOLDER .. "/src/glew.c"
+				INCLUDE_FOLDER .. "/MultiLibrary/Visual.hpp"
 			})
+
+			filter("options:compile-glew")
+				defines({"GLEW_STATIC"})
+				vpaths({["Sources"] = THIRDPARTY_FOLDER .. "/src/**.c"})
+				files({THIRDPARTY_FOLDER .. "/src/glew.c"})
 
 			filter({"system:windows", "configurations:Debug or Release"})
 				links({"Window", "Common", "opengl32"})

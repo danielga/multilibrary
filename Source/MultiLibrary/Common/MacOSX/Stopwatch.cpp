@@ -56,13 +56,13 @@ Stopwatch::Stopwatch( ) :
 
 Stopwatch::~Stopwatch( )
 {
-	MutexLock auto_lock( update_lock );
+	std::lock_guard<std::mutex> auto_lock( update_lock );
 	running = false;
 }
 
 void Stopwatch::Resume( )
 {
-	MutexLock auto_lock( update_lock );
+	std::lock_guard<std::mutex> auto_lock( update_lock );
 
 	if( running )
 		return;
@@ -73,7 +73,7 @@ void Stopwatch::Resume( )
 
 void Stopwatch::Pause( )
 {
-	MutexLock auto_lock( update_lock );
+	std::lock_guard<std::mutex> auto_lock( update_lock );
 
 	if( !running )
 		return;
@@ -84,7 +84,7 @@ void Stopwatch::Pause( )
 
 void Stopwatch::Reset( )
 {
-	MutexLock auto_lock( update_lock );
+	std::lock_guard<std::mutex> auto_lock( update_lock );
 
 	elapsed_time = 0.0;
 	last_update = mach_absolute_time( ) * update_frequency;
@@ -92,7 +92,7 @@ void Stopwatch::Reset( )
 
 double Stopwatch::GetElapsedTime( )
 {
-	MutexLock auto_lock( update_lock );
+	std::lock_guard<std::mutex> auto_lock( update_lock );
 
 	if( running )
 	{

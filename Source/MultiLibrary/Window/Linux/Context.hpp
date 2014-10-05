@@ -36,44 +36,30 @@
 
 #pragma once
 
-#include <MultiLibrary/Common/Export.hpp>
+#include <MultiLibrary/Window/Export.hpp>
+#include <MultiLibrary/Common/NonCopyable.hpp>
+#include <GL/glxew.h>
 
 namespace MultiLibrary
 {
 
-class Subscriber;
+struct VideoMode;
+struct WindowSettings;
+struct ContextSettings;
 
-/*!
- \brief An interface for objects that can receive subscribers.
-
- The general idea of this is that if you want to use an object and you
- have no idea when it'll be destroyed, you subscribe to it and it'll
- tell you when it's being destroyed. This prevents crashes caused by,
- for example, streaming an audio file through an object and that object
- is suddenly destroyed.
- Of course, if you properly code your program, you'll never have to use
- this.
- */
-class Publisher
+class MULTILIBRARY_WINDOW_API Context : public NonCopyable
 {
 public:
-	/*!
-	 \brief Attach to an anchor.
+	Context( GLXDrawable window, const VideoMode &video_settings, const WindowSettings &window_setup, const ContextSettings &context_settings );
+	~Context( );
 
-	 This is called by anchors to warn we've been referenced.
+	bool SetActive( bool active = true );
+	bool IsActive( ) const;
 
-	 \param base Anchor to attach to.
-	 */
-	virtual void Subscribe( Subscriber *base ) = 0;
-
-	/*!
-	 \brief Detach from an anchor.
-
-	 This is called by anchors to warn we've been dereferenced.
-
-	 \param base Anchor to detach from.
-	 */
-	virtual void Unsubscribe( Subscriber *base ) = 0;
+	Display *display_handle;
+	GLXDrawable window_handle;
+	XVisualInfo *visual_info;
+	GLXContext context_handle;
 };
 
 } // namespace MultiLibrary

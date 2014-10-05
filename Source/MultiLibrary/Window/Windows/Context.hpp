@@ -38,10 +38,8 @@
 
 #include <MultiLibrary/Window/Export.hpp>
 #include <MultiLibrary/Common/NonCopyable.hpp>
-
-typedef struct HWND__ *HWND;
-typedef struct HDC__ *HDC;
-typedef struct HGLRC__ *HGLRC;
+#include <GL/glew.h>
+#include <GL/wglew.h>
 
 namespace MultiLibrary
 {

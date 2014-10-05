@@ -546,7 +546,7 @@ namespace UTF32
 {
 
 template<typename Input>
-static Input Decode( Input begin, Input end, uint32_t &output, uint32_t replace )
+static Input Decode( Input begin, Input, uint32_t &output, uint32_t )
 {
 	output = *begin;
 	return ++begin;
@@ -560,7 +560,7 @@ static Output Encode( uint32_t input, Output output, uint32_t )
 }
 
 template<typename Input>
-static Input Next( Input begin, Input end )
+static Input Next( Input begin, Input )
 {
 	return ++begin;
 }
