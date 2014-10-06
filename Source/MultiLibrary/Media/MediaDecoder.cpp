@@ -407,7 +407,7 @@ bool MediaDecoder::Seek( int64_t offset )
 	return av_seek_frame( format_context, -1, offset, 0 ) >= 0;
 }
 
-long long MediaDecoder::GetPosition( )
+int64_t MediaDecoder::GetPosition( )
 {
 	if( !IsOpen( ) )
 		return 0;
