@@ -86,7 +86,7 @@ int64_t Pipe::Tell( ) const
 int64_t Pipe::Size( ) const
 {
 	int size = 0;
-	if( ioctl( reinterpret_cast<int>( read_handle ), FIONREAD, &size ) == 0 )
+	if( ioctl( *reinterpret_cast<const int *>( &read_handle ), FIONREAD, &size ) == 0 )
 		return 0;
 
 	return 0;
@@ -101,11 +101,11 @@ size_t Pipe::Read( void *data, size_t size )
 {
 	fd_set rfds;
 	FD_ZERO( &rfds );
-	FD_SET( reinterpret_cast<int>( read_handle ), &rfds );
+	FD_SET( *reinterpret_cast<int *>( &read_handle ), &rfds );
 	timeval time = { 0, 0 };
 	if( select( 1, &rfds, nullptr, nullptr, &time ) == 1 )
 	{
-		ssize_t res = read( reinterpret_cast<int>( read_handle ), data, size );
+		ssize_t res = read( *reinterpret_cast<int *>( &read_handle ), data, size );
 		if( res >= 0 )
 			return res;
 	}
@@ -117,11 +117,11 @@ size_t Pipe::Write( const void *data, size_t size )
 {
 	fd_set rfds;
 	FD_ZERO( &rfds );
-	FD_SET( reinterpret_cast<int>( write_handle ), &rfds );
+	FD_SET( *reinterpret_cast<int *>( &write_handle ), &rfds );
 	timeval time = { 0, 0 };
 	if( select( 1, nullptr, &rfds, nullptr, &time ) == 1 )
 	{
-		ssize_t res = write( reinterpret_cast<int>( write_handle ), data, size );
+		ssize_t res = write( *reinterpret_cast<int *>( &write_handle ), data, size );
 		if( res >= 0 )
 			return res;
 	}
@@ -143,7 +143,7 @@ void Pipe::CloseRead( )
 {
 	if( read_handle != 0 )
 	{
-		close( reinterpret_cast<int>( read_handle ) );
+		close( *reinterpret_cast<int *>( &read_handle ) );
 		read_handle = 0;
 	}
 }
@@ -152,7 +152,7 @@ void Pipe::CloseWrite( )
 {
 	if( write_handle != 0 )
 	{
-		close( reinterpret_cast<int>( write_handle ) );
+		close( *reinterpret_cast<int *>( &write_handle ) );
 		write_handle = 0;
 	}
 }

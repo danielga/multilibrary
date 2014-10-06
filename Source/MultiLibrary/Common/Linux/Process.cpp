@@ -86,7 +86,7 @@ Process::Status Process::GetStatus( ) const
 		return Status::Unknown;
 
 	int status = 0;
-	if( waitpid( reinterpret_cast<pid_t>( process ), &status, WNOHANG ) )
+	if( waitpid( *reinterpret_cast<const pid_t *>( &process ), &status, WNOHANG ) )
 		return WIFEXITED( status ) ? Status::Terminated : Status::Running;
 
 	return Status::Unknown;
@@ -98,7 +98,7 @@ bool Process::Close( )
 		return false;
 
 	int status = 0;
-	if( waitpid( reinterpret_cast<pid_t>( process ), &status, 0 ) > 0 )
+	if( waitpid( *reinterpret_cast<pid_t *>( &process ), &status, 0 ) > 0 )
 		return WIFEXITED( status );
 
 	return false;
@@ -109,7 +109,7 @@ void Process::Kill( )
 	if( process == 0 )
 		return;
 
-	kill( reinterpret_cast<pid_t>( process ), 0 );
+	kill( *reinterpret_cast<pid_t *>( &process ), 0 );
 	Close( );
 }
 
