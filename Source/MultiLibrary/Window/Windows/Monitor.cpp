@@ -34,7 +34,7 @@
  *
  *************************************************************************/
 
-#include <MultiLibrary/Window/Monitor.hpp>
+#include <MultiLibrary/Window/Windows/Monitor.hpp>
 #include <MultiLibrary/Common/Unicode.hpp>
 #include <Windows.h>
 
@@ -47,24 +47,17 @@
 namespace MultiLibrary
 {
 
-struct MonitorHandle
-{
-	MonitorHandle( const std::string &mname, const std::wstring &widemname, int32_t w, int32_t h ) :
-		name( mname ),
-		widename( widemname ),
-		size( w, h )
-	{ }
+Monitor::Handle::Handle( const std::string &mname, const std::wstring &widemname, int32_t w, int32_t h ) :
+	name( mname ),
+	widename( widemname ),
+	size( w, h )
+{ }
 
-	MonitorHandle( const MonitorHandle &m ) :
-		name( m.name ),
-		widename( m.widename ),
-		size( m.size )
-	{ }
-
-	std::string name;
-	std::wstring widename;
-	Vector2i size;
-};
+Monitor::Handle::Handle( const Handle &m ) :
+	name( m.name ),
+	widename( m.widename ),
+	size( m.size )
+{ }
 
 Monitor::Monitor( bool use_primary_monitor ) :
 	monitor_internal( nullptr )
@@ -73,19 +66,13 @@ Monitor::Monitor( bool use_primary_monitor ) :
 	{
 		std::vector<Monitor> monitors = GetMonitors( );
 		if( monitors.size( ) > 0 )
-			monitor_internal = new MonitorHandle( *monitors[0].monitor_internal );
+			monitor_internal = std::make_shared<Handle>( *monitors[0].monitor_internal );
 	}
 }
 
-Monitor::Monitor( MonitorHandle *monitor ) :
+Monitor::Monitor( Handle *monitor ) :
 	monitor_internal( monitor )
 { }
-
-Monitor::~Monitor( )
-{
-	if( monitor_internal != nullptr )
-		delete monitor_internal;
-}
 
 bool Monitor::IsValid( ) const
 {
@@ -262,9 +249,9 @@ std::vector<VideoMode> Monitor::GetFullscreenModes( ) const
 	return video_modes;
 }
 
-MonitorHandle *Monitor::GetHandle( ) const
+const Monitor::Handle &Monitor::GetHandle( ) const
 {
-	return monitor_internal;
+	return *monitor_internal.get( );
 }
 
 std::vector<Monitor> Monitor::GetMonitors( )
@@ -299,9 +286,9 @@ std::vector<Monitor> Monitor::GetMonitors( )
 		DeleteDC( dc );
 
 		if( adapter.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE )
-			monitors.insert( monitors.begin( ), Monitor( new MonitorHandle( narrowname, widename, w, h ) ) );
+			monitors.insert( monitors.begin( ), Monitor( new Handle( narrowname, widename, w, h ) ) );
 		else
-			monitors.push_back( Monitor( new MonitorHandle( narrowname, widename, w, h ) ) );
+			monitors.push_back( Monitor( new Handle( narrowname, widename, w, h ) ) );
 	}
 
 	return monitors;

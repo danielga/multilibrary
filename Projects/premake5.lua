@@ -66,6 +66,12 @@ solution("MultiLibrary")
 		filter({"system:windows", "platforms:x64"})
 			libdirs({THIRDPARTY_FOLDER .. "/lib/x64"})
 
+	filter("system:linux")
+		includedirs({THIRDPARTY_FOLDER .. "/include"})
+
+	filter("system:macosx")
+		includedirs({THIRDPARTY_FOLDER .. "/include"})
+
 	filter("configurations:Release")
 		optimize("On")
 		vectorextensions("SSE2")

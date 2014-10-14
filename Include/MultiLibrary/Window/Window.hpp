@@ -37,9 +37,7 @@
 #pragma once
 
 #include <MultiLibrary/Window/Export.hpp>
-#include <MultiLibrary/Window/VideoMode.hpp>
 #include <MultiLibrary/Window/WindowSettings.hpp>
-#include <MultiLibrary/Window/ContextSettings.hpp>
 #include <MultiLibrary/Window/Keyboard.hpp>
 #include <MultiLibrary/Window/Mouse.hpp>
 #include <MultiLibrary/Common/Vector2.hpp>
@@ -48,13 +46,6 @@
 
 namespace MultiLibrary
 {
-
-namespace Internal
-{
-
-struct WindowHandle;
-
-}
 
 enum CursorMode
 {
@@ -67,12 +58,12 @@ class MULTILIBRARY_WINDOW_API Window
 {
 public:
 	Window( );
-	Window( const VideoMode &video_setup, const std::string &title, const WindowSettings &window_setup = WindowSettings( ), const ContextSettings &context_setup = ContextSettings( ) );
+	Window( const std::string &title, const WindowSettings &window_setup = WindowSettings( ) );
 	virtual ~Window( );
 
 	bool IsValid( ) const;
 
-	bool Create( const VideoMode &video_setup, const std::string &title, const WindowSettings &window_setup = WindowSettings( ), const ContextSettings &context_setup = ContextSettings( ) );
+	bool Create( const std::string &title, const WindowSettings &window_setup = WindowSettings( ) );
 	void Close( );
 
 	bool ShouldClose( ) const;
@@ -112,8 +103,6 @@ public:
 	bool IsMouseButtonPressed( MouseButton code ) const;
 
 	Monitor GetFullscreenMonitor( ) const;
-	ContextSettings GetContextSettings( ) const;
-	VideoMode GetVideoMode( ) const;
 
 	bool IsFocused( ) const;
 	bool IsResizable( ) const;
@@ -147,10 +136,9 @@ protected:
 	virtual void OnScroll( const Vector2d &offset );
 
 private:
-	std::shared_ptr<Internal::WindowHandle> window_internal;
-	VideoMode video_settings;
+	struct Handle;
+	std::shared_ptr<Handle> window_internal;
 	WindowSettings window_settings;
-	ContextSettings context_settings;
 	bool should_close;
 };
 

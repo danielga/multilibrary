@@ -41,11 +41,10 @@
 #include <MultiLibrary/Common/Vector2.hpp>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace MultiLibrary
 {
-
-struct MonitorHandle;
 
 struct GammaColors
 {
@@ -70,7 +69,6 @@ class MULTILIBRARY_WINDOW_API Monitor
 {
 public:
 	explicit Monitor( bool use_primary_monitor = false );
-	~Monitor( );
 
 	bool IsValid( ) const;
 
@@ -88,14 +86,15 @@ public:
 
 	std::vector<VideoMode> GetFullscreenModes( ) const;
 
-	MonitorHandle *GetHandle( ) const;
-
 	static std::vector<Monitor> GetMonitors( );
 
-private:
-	Monitor( MonitorHandle *handle );
+	struct Handle;
+	const Handle &GetHandle( ) const;
 
-	MonitorHandle *monitor_internal;
+private:
+	Monitor( Handle *handle );
+
+	std::shared_ptr<Handle> monitor_internal;
 };
 
 } // namespace MultiLibrary

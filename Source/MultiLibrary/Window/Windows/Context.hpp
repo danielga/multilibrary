@@ -45,12 +45,12 @@ namespace MultiLibrary
 {
 
 struct VideoMode;
-struct ContextSettings;
+struct WindowSettings;
 
 class MULTILIBRARY_WINDOW_API Context : public NonCopyable
 {
 public:
-	Context( HWND window, const VideoMode &video_settings, const ContextSettings &context_settings );
+	Context( HWND window, const WindowSettings &window_settings );
 	~Context( );
 
 	bool SetActive( bool active = true );

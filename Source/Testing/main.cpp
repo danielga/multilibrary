@@ -251,7 +251,7 @@ static void ThreadFunction( std::reference_wrapper<ML::Window> win )
 
 static void TestWindow( )
 {
-	ML::Window window( ML::VideoMode( 600, 400 ), "Tëst wíndow", ML::WindowSettings( true, false, true ), ML::ContextSettings( 8 ) );
+	ML::Window window( "Tëst wíndow", ML::WindowSettings( ML::Monitor( ), true, false, true, 600, 400 ) );
 	window.SetPosition( ML::Vector2i( 50, 50 ) );
 	window.SetVisible( true );
 
@@ -283,7 +283,7 @@ int main( int, char ** )
 	//TestStrings( );
 	//TestFilesystem( );
 	//TestAudio( );
-	//TestWindow( );
-	TestProcess( );
+	TestWindow( );
+	//TestProcess( );
 	return 0;
 }
