@@ -87,7 +87,7 @@ Context::Context( HWND window, const WindowSettings &window_settings ) :
 			1,
 			PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
 			PFD_TYPE_RGBA,
-			static_cast<uint8_t>( window_settings.red_bits + window_settings.green_bits + window_settings.blue_bits + window_settings.alpha_bits ),
+			static_cast<uint8_t>( window_settings.red_bits + window_settings.green_bits + window_settings.blue_bits ),
 			static_cast<uint8_t>( window_settings.red_bits ), 0,
 			static_cast<uint8_t>( window_settings.green_bits ), 0,
 			static_cast<uint8_t>( window_settings.blue_bits ), 0,
