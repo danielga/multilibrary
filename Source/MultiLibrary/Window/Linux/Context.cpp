@@ -36,7 +36,6 @@
 
 #include <MultiLibrary/Window/Linux/Context.hpp>
 #include <MultiLibrary/Window/VideoMode.hpp>
-#include <MultiLibrary/Window/ContextSettings.hpp>
 #include <MultiLibrary/Window/Window.hpp>
 #include <stdexcept>
 
@@ -50,15 +49,12 @@ Context *current_context = nullptr;
 
 }
 
-Context::Context( GLXDrawable window, const VideoMode &video_settings, const WindowSettings &window_setup, const ContextSettings &context_settings ) :
-	display_handle( nullptr ),
+Context::Context( Display *display, GLXDrawable window, const VideoMode &video_settings, const WindowSettings &window_setup ) :
+	display_handle( display ),
 	window_handle( window ),
 	visual_info( nullptr ),
 	context_handle( nullptr )
 {
-	static Display *display = XOpenDisplay( nullptr );
-	display_handle = display;
-
 	const int pixel_attributes[] = {
 		GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
 		GLX_DOUBLEBUFFER, GL_TRUE,
@@ -68,10 +64,10 @@ Context::Context( GLXDrawable window, const VideoMode &video_settings, const Win
 		GLX_RED_SIZE, video_settings.red_bits,
 		GLX_GREEN_SIZE, video_settings.green_bits,
 		GLX_BLUE_SIZE, video_settings.blue_bits,
-		GLX_ALPHA_SIZE, context_settings.alpha_bits,
-		GLX_DEPTH_SIZE, context_settings.depth_bits,
-		GLX_STENCIL_SIZE, context_settings.stencil_bits,
-		GLX_SAMPLES, context_settings.samples,
+		GLX_ALPHA_SIZE, window_setup.alpha_bits,
+		GLX_DEPTH_SIZE, window_setup.depth_bits,
+		GLX_STENCIL_SIZE, window_setup.stencil_bits,
+		GLX_SAMPLES, window_setup.samples,
 		0
 	};
 	int elems = 0;

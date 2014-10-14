@@ -38,19 +38,19 @@
 
 #include <MultiLibrary/Window/Export.hpp>
 #include <MultiLibrary/Common/NonCopyable.hpp>
-#include <GL/glxew.h>
+#include <GL/glew.h>
+#include <GL/glx.h>
 
 namespace MultiLibrary
 {
 
 struct VideoMode;
 struct WindowSettings;
-struct ContextSettings;
 
 class MULTILIBRARY_WINDOW_API Context : public NonCopyable
 {
 public:
-	Context( GLXDrawable window, const VideoMode &video_settings, const WindowSettings &window_setup, const ContextSettings &context_settings );
+	Context( Display *display, GLXDrawable window, const VideoMode &video_settings, const WindowSettings &window_setup );
 	~Context( );
 
 	bool SetActive( bool active = true );

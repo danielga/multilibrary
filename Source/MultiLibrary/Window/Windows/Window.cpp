@@ -40,8 +40,6 @@
 #include <stdexcept>
 #include <cstring>
 #include <Windows.h>
-#include <GL/glew.h>
-#include <GL/wglew.h>
 
 #undef CreateWindow
 
@@ -88,7 +86,7 @@ public:
 			throw std::runtime_error( "failed to create temporary window" );
 
 		{
-			Context context( temp_window, VideoMode( ), ContextSettings( ) );
+			Context context( temp_window, WindowSettings( ) );
 			context.SetActive( true );
 
 			if( glewInit( ) != GLEW_OK )
@@ -141,12 +139,14 @@ static void GetFullWindowSize( DWORD flags, DWORD exflags, int32_t win, int32_t 
 	hout = rect.bottom - rect.top;
 }
 
-struct WindowHandle
+} // namespace Internal
+
+struct Window::Handle
 {
-	WindowHandle( HWND window, const VideoMode &video_settings, const ContextSettings &context_settings ) :
+	Handle( HWND window, const WindowSettings &window_settings ) :
 		handle( window, DestroyWindow ),
 		icon( nullptr, DestroyIcon ),
-		context( window, video_settings, context_settings )
+		context( window, window_settings )
 	{
 		std::memset( keyboard_buttons, BUTTON_RELEASED, sizeof( keyboard_buttons ) );
 		std::memset( mouse_buttons, BUTTON_RELEASED, sizeof( mouse_buttons ) );
@@ -164,16 +164,14 @@ struct WindowHandle
 	ButtonState mouse_buttons[MOUSE_BUTTON_LAST + 1];
 };
 
-} // namespace Internal
-
 Window::Window( ) :
 	should_close( false )
 { }
 
-Window::Window( const VideoMode &video_setup, const std::string &title, const WindowSettings &window_setup, const ContextSettings &context_setup ) :
+Window::Window( const std::string &title, const WindowSettings &window_setup ) :
 	should_close( false )
 {
-	Create( video_setup, title, window_setup, context_setup );
+	Create( title, window_setup );
 }
 
 Window::~Window( )
@@ -184,7 +182,7 @@ bool Window::IsValid( ) const
 	return static_cast<bool>( window_internal );
 }
 
-bool Window::Create( const VideoMode &video_setup, const std::string &title, const WindowSettings &window_setup, const ContextSettings &context_setup )
+bool Window::Create( const std::string &title, const WindowSettings &window_setup )
 {
 	if( IsValid( ) )
 		return false;
@@ -204,8 +202,8 @@ bool Window::Create( const VideoMode &video_setup, const std::string &title, con
 		Vector2i pos = window_setup.monitor.GetPosition( );
 		x = pos.x;
 		y = pos.y;
-		w = video_setup.width;
-		h = video_setup.height;
+		w = window_setup.width;
+		h = window_setup.height;
 	}
 	else
 	{
@@ -224,7 +222,7 @@ bool Window::Create( const VideoMode &video_setup, const std::string &title, con
 			flags |= WS_POPUP;
 		}
 
-		Internal::GetFullWindowSize( flags, exflags, video_setup.width, video_setup.height, w, h );
+		Internal::GetFullWindowSize( flags, exflags, window_setup.width, window_setup.height, w, h );
 	}
 
 	HWND handle = CreateWindowEx(
@@ -237,7 +235,8 @@ bool Window::Create( const VideoMode &video_setup, const std::string &title, con
 		nullptr,
 		nullptr,
 		GetModuleHandle( nullptr ),
-		this );
+		this
+	);
 	if( handle == nullptr )
 		return false;
 
@@ -252,11 +251,9 @@ bool Window::Create( const VideoMode &video_setup, const std::string &title, con
 	DWORD newflags = GetWindowLong( handle, GWL_STYLE );
 	DWORD newexflags = GetWindowLong( handle, GWL_EXSTYLE );
 
-	video_settings = video_setup;
 	window_settings = window_setup;
-	context_settings = context_setup;
 
-	window_internal = std::make_shared<Internal::WindowHandle>( handle, video_setup, context_setup );
+	window_internal = std::make_shared<Handle>( handle, window_setup );
 	window_internal->flags = newflags;
 	window_internal->exflags = newexflags;
 	window_internal->monitor = window_setup.monitor;
@@ -574,22 +571,6 @@ Monitor Window::GetFullscreenMonitor( ) const
 		return Monitor( );
 
 	return window_internal->monitor;
-}
-
-ContextSettings Window::GetContextSettings( ) const
-{
-	if( !IsValid( ) )
-		return ContextSettings( );
-
-	return context_settings;
-}
-
-VideoMode Window::GetVideoMode( ) const
-{
-	if( !IsValid( ) )
-		return VideoMode( );
-
-	return video_settings;
 }
 
 bool Window::IsFocused( ) const

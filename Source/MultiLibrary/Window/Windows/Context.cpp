@@ -36,7 +36,7 @@
 
 #include <MultiLibrary/Window/Windows/Context.hpp>
 #include <MultiLibrary/Window/VideoMode.hpp>
-#include <MultiLibrary/Window/ContextSettings.hpp>
+#include <MultiLibrary/Window/WindowSettings.hpp>
 #include <MultiLibrary/Window/Window.hpp>
 #include <stdexcept>
 #include <GL/glew.h>
@@ -52,7 +52,7 @@ Context *current_context = nullptr;
 
 }
 
-Context::Context( HWND window, const VideoMode &video_settings, const ContextSettings &context_settings ) :
+Context::Context( HWND window, const WindowSettings &window_settings ) :
 	window_handle( window ),
 	device_context( nullptr ),
 	context_handle( nullptr )
@@ -69,11 +69,11 @@ Context::Context( HWND window, const VideoMode &video_settings, const ContextSet
 			WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
 			WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
 			WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-			WGL_COLOR_BITS_ARB, video_settings.red_bits + video_settings.green_bits + video_settings.blue_bits + context_settings.alpha_bits,
-			WGL_DEPTH_BITS_ARB, context_settings.depth_bits,
-			WGL_STENCIL_BITS_ARB, context_settings.stencil_bits,
-			WGL_SAMPLE_BUFFERS_ARB, context_settings.samples == 0 ? GL_FALSE : GL_TRUE,
-			WGL_SAMPLES_ARB, context_settings.samples,
+			WGL_COLOR_BITS_ARB, window_settings.red_bits + window_settings.green_bits + window_settings.blue_bits + window_settings.alpha_bits,
+			WGL_DEPTH_BITS_ARB, window_settings.depth_bits,
+			WGL_STENCIL_BITS_ARB, window_settings.stencil_bits,
+			WGL_SAMPLE_BUFFERS_ARB, window_settings.samples == 0 ? GL_FALSE : GL_TRUE,
+			WGL_SAMPLES_ARB, window_settings.samples,
 			0
 		};
 
@@ -87,15 +87,15 @@ Context::Context( HWND window, const VideoMode &video_settings, const ContextSet
 			1,
 			PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
 			PFD_TYPE_RGBA,
-			static_cast<uint8_t>( video_settings.red_bits + video_settings.green_bits + video_settings.blue_bits + context_settings.alpha_bits ),
-			static_cast<uint8_t>( video_settings.red_bits ), 0,
-			static_cast<uint8_t>( video_settings.green_bits ), 0,
-			static_cast<uint8_t>( video_settings.blue_bits ), 0,
-			static_cast<uint8_t>( context_settings.alpha_bits ), 0,
+			static_cast<uint8_t>( window_settings.red_bits + window_settings.green_bits + window_settings.blue_bits + window_settings.alpha_bits ),
+			static_cast<uint8_t>( window_settings.red_bits ), 0,
+			static_cast<uint8_t>( window_settings.green_bits ), 0,
+			static_cast<uint8_t>( window_settings.blue_bits ), 0,
+			static_cast<uint8_t>( window_settings.alpha_bits ), 0,
 			0,
 			0, 0, 0, 0,
-			static_cast<uint8_t>( context_settings.depth_bits ),
-			static_cast<uint8_t>( context_settings.stencil_bits ),
+			static_cast<uint8_t>( window_settings.depth_bits ),
+			static_cast<uint8_t>( window_settings.stencil_bits ),
 			0,
 			PFD_MAIN_PLANE,
 			0,
@@ -118,8 +118,8 @@ Context::Context( HWND window, const VideoMode &video_settings, const ContextSet
 	if( wglCreateContextAttribsARB != nullptr )
 	{
 		const int context_attributes[] = {
-			WGL_CONTEXT_MAJOR_VERSION_ARB, context_settings.major_version,
-			WGL_CONTEXT_MINOR_VERSION_ARB, context_settings.minor_version,
+			WGL_CONTEXT_MAJOR_VERSION_ARB, window_settings.opengl_major,
+			WGL_CONTEXT_MINOR_VERSION_ARB, window_settings.opengl_minor,
 			0
 		};
 

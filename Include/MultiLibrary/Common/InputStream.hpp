@@ -46,7 +46,7 @@ namespace MultiLibrary
 /*!
  \brief An abstract class for objects that can act as input data streams.
  */
-class MULTILIBRARY_COMMON_API InputStream : public virtual Stream
+class MULTILIBRARY_COMMON_API InputStream : public Stream
 {
 public:
 	/*!
