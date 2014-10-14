@@ -36,25 +36,40 @@
 
 #include <MultiLibrary/Common/Process.hpp>
 #include <MultiLibrary/Common/Unicode.hpp>
+#include <MultiLibrary/Common/Windows/Pipe.hpp>
 #include <system_error>
 #include <windows.h>
 
 namespace MultiLibrary
 {
 
-namespace Internal
+class Process::Handle
 {
+public:
+	Handle( HANDLE proc ) :
+		internal( proc )
+	{ }
 
-void CloseHandle( void *handle )
-{
-	::CloseHandle( handle );
-}
+	~Handle( )
+	{
+		if( internal != nullptr )
+			CloseHandle( internal );
+	}
 
-} // namespace Internal
+	operator HANDLE( ) const
+	{
+		return internal;
+	}
+
+private:
+	HANDLE internal;
+};
 
 Process::Process( const std::string &path, const std::vector<std::string> &args ) :
-	process( nullptr ),
-	exit_code( 0 )
+	exit_code( 0 ),
+	input_pipe( true, false ),
+	output_pipe( false, true ),
+	error_pipe( false, true )
 {
 	std::string cmdline;
 	cmdline.reserve( path.size( ) + 3 );
@@ -87,10 +102,7 @@ Process::Process( const std::string &path, const std::vector<std::string> &args 
 		throw std::system_error( GetLastError( ), std::system_category( ), "failed to create process" );
 
 	CloseHandle( info.hThread );
-	input_pipe.CloseRead( );
-	output_pipe.CloseWrite( );
-	error_pipe.CloseWrite( );
-	process = info.hProcess;
+	process.reset( new Handle( info.hProcess ) );
 }
 
 Process::~Process( )
@@ -100,26 +112,25 @@ Process::~Process( )
 
 Process::Status Process::GetStatus( ) const
 {
-	if( process == nullptr )
+	if( !process )
 		return Status::Unknown;
 
-	return WaitForSingleObject( process, 0 ) == WAIT_OBJECT_0 ? Status::Terminated : Status::Running;
+	return WaitForSingleObject( *process, 0 ) == WAIT_OBJECT_0 ? Status::Terminated : Status::Running;
 }
 
 bool Process::Close( )
 {
-	if( process == nullptr )
+	if( !process )
 		return true;
 
 	CloseInput( );
 
-	if( WaitForSingleObject( process, INFINITE ) == WAIT_OBJECT_0 )
+	if( WaitForSingleObject( *process, INFINITE ) == WAIT_OBJECT_0 )
 	{
 		DWORD code = 0;
-		GetExitCodeProcess( process, &code );
+		GetExitCodeProcess( *process, &code );
 		exit_code = static_cast<int32_t>( code );
-		CloseHandle( process );
-		process = nullptr;
+		process.reset( );
 		return true;
 	}
 
@@ -128,10 +139,10 @@ bool Process::Close( )
 
 void Process::Kill( )
 {
-	if( process == nullptr )
+	if( !process )
 		return;
 
-	TerminateProcess( process, 0 );
+	TerminateProcess( *process, 0 );
 	Close( );
 }
 

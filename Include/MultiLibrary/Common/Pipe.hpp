@@ -39,10 +39,28 @@
 #include <MultiLibrary/Common/Export.hpp>
 #include <MultiLibrary/Common/NonCopyable.hpp>
 #include <MultiLibrary/Common/IOStream.hpp>
-#include <set>
+#include <memory>
 
 namespace MultiLibrary
 {
+
+namespace Standard
+{
+
+enum class Input
+{
+	None = -1,
+	Normal
+};
+
+enum class Output
+{
+	None = -1,
+	Normal,
+	Error
+};
+
+}
 
 /*!
  \brief A class that wraps the operating system's pipe functionality.
@@ -50,7 +68,7 @@ namespace MultiLibrary
 class MULTILIBRARY_COMMON_API Pipe : public IOStream, public NonCopyable
 {
 public:
-	Pipe( void *read, void *write );
+	Pipe( Standard::Input in, Standard::Output out );
 
 	/*!
 	 \brief Create a pipe with the specified inheritances.
@@ -58,7 +76,7 @@ public:
 	 \param read_inheritable Should the read handle be inheritable
 	 \param write_inheritable Should the write handle be inheritable
 	 */
-	Pipe( bool read_inheritable = false, bool write_inheritable = false );
+	Pipe( bool read_inheritable, bool write_inheritable );
 
 	/*!
 	 \brief Destructor.
@@ -120,15 +138,16 @@ public:
 	 */
 	size_t Write( const void *data, size_t size );
 
-	void *ReadHandle( ) const;
-	void *WriteHandle( ) const;
-
 	void CloseRead( );
 	void CloseWrite( );
 
+	class Handle;
+	const Handle &ReadHandle( ) const;
+	const Handle &WriteHandle( ) const;
+
 private:
-	void *read_handle;
-	void *write_handle;
+	std::unique_ptr<Handle> read_handle;
+	std::unique_ptr<Handle> write_handle;
 };
 
 } // namespace MultiLibrary

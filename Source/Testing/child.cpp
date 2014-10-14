@@ -2,11 +2,10 @@
 #include <MultiLibrary/Filesystem/Filesystem.hpp>
 #include <iostream>
 #include <thread>
-#include <Windows.h>
 
 int main( int, char ** )
 {
-	ML::Pipe pipe( GetStdHandle( STD_INPUT_HANDLE ), nullptr );
+	ML::Pipe pipe( ML::Standard::Input::Normal, ML::Standard::Output::None );
 	std::string str1, str2, str3, str4;
 	int32_t num = 0;
 	bool boolean;

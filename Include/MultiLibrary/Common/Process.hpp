@@ -39,10 +39,9 @@
 #include <MultiLibrary/Common/Export.hpp>
 #include <MultiLibrary/Common/NonCopyable.hpp>
 #include <MultiLibrary/Common/Pipe.hpp>
-#include <chrono>
-#include <iostream>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace MultiLibrary
 {
@@ -131,7 +130,8 @@ public:
 	int32_t ExitCode( ) const;
 
 private:
-	void *process;
+	class Handle;
+	std::unique_ptr<Handle> process;
 	int32_t exit_code;
 	Pipe input_pipe;
 	Pipe output_pipe;

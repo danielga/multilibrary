@@ -34,41 +34,116 @@
  *
  *************************************************************************/
 
-#include <MultiLibrary/Common/Pipe.hpp>
-#include <MultiLibrary/Common/Unicode.hpp>
+#include <MultiLibrary/Common/Windows/Pipe.hpp>
 #include <stdexcept>
 #include <system_error>
-#include <windows.h>
 
 namespace MultiLibrary
 {
 
-Pipe::Pipe( void *read, void *write ) :
-	read_handle( read ),
-	write_handle( write )
+Pipe::Handle::Handle( HANDLE proc ) :
+	internal( proc )
 { }
 
-Pipe::Pipe( bool read_inheritable, bool write_inheritable ) :
-	read_handle( nullptr ),
-	write_handle( nullptr )
+Pipe::Handle::~Handle( )
+{
+	if( internal != nullptr )
+		CloseHandle( internal );
+}
+
+Pipe::Handle::operator HANDLE( ) const
+{
+	return internal;
+}
+
+Pipe::Pipe( Standard::Input in, Standard::Output out )
+{
+	HANDLE cur_proc = GetCurrentProcess( );
+	HANDLE std_handle = nullptr;
+	if( in == Standard::Input::Normal )
+	{
+		std_handle = GetStdHandle( STD_INPUT_HANDLE );
+		if( std_handle == INVALID_HANDLE_VALUE || std_handle == nullptr )
+			throw std::system_error( GetLastError( ), std::system_category( ), "unable to obtain standard input handle" );
+
+		if( DuplicateHandle(
+			cur_proc,
+			std_handle,
+			cur_proc,
+			&std_handle,
+			0,
+			FALSE,
+			DUPLICATE_SAME_ACCESS
+		) == FALSE )
+			throw std::system_error( GetLastError( ), std::system_category( ), "unable to duplicate standard input handle" );
+
+		read_handle.reset( new Handle( std_handle ) );
+	}
+
+	switch( out )
+	{
+		case Standard::Output::Normal:
+			std_handle = GetStdHandle( STD_OUTPUT_HANDLE );
+			if( std_handle == INVALID_HANDLE_VALUE || std_handle == nullptr )
+				throw std::system_error( GetLastError( ), std::system_category( ), "unable to obtain standard output handle" );
+
+			if( DuplicateHandle(
+				cur_proc,
+				std_handle,
+				cur_proc,
+				&std_handle,
+				0,
+				FALSE,
+				DUPLICATE_SAME_ACCESS
+			) == FALSE )
+				throw std::system_error( GetLastError( ), std::system_category( ), "unable to duplicate standard output handle" );
+
+			write_handle.reset( new Handle( std_handle ) );
+			break;
+
+		case Standard::Output::Error:
+			std_handle = GetStdHandle( STD_ERROR_HANDLE );
+			if( std_handle == INVALID_HANDLE_VALUE || std_handle == nullptr )
+				throw std::system_error( GetLastError( ), std::system_category( ), "unable to obtain standard error handle" );
+
+			if( DuplicateHandle(
+				cur_proc,
+				std_handle,
+				cur_proc,
+				&std_handle,
+				0,
+				FALSE,
+				DUPLICATE_SAME_ACCESS
+			) == FALSE )
+				throw std::system_error( GetLastError( ), std::system_category( ), "unable to duplicate standard error handle" );
+
+			write_handle.reset( new Handle( std_handle ) );
+			break;
+
+		default:
+			break;
+	}
+}
+
+Pipe::Pipe( bool read_inheritable, bool write_inheritable )
 {
 	SECURITY_ATTRIBUTES sa;
 	sa.nLength = static_cast<DWORD>( sizeof( SECURITY_ATTRIBUTES ) );
-	sa.bInheritHandle = FALSE;
+	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = nullptr;
 
 	HANDLE read = nullptr, write = nullptr;
 	if( CreatePipe( &read, &write, &sa, 0 ) == FALSE )
 		throw std::system_error( GetLastError( ), std::system_category( ), "unable to create pipe" );
 
-	read_handle = read;
-	write_handle = write;
-
-	if( read_inheritable && SetHandleInformation( read, HANDLE_FLAG_INHERIT, TRUE ) == FALSE )
+	if( !read_inheritable && SetHandleInformation( read, HANDLE_FLAG_INHERIT, FALSE ) == FALSE )
 		throw std::system_error( GetLastError( ), std::system_category( ), "unable to set pipe write handle flag" );
 
-	if( write_inheritable && SetHandleInformation( write, HANDLE_FLAG_INHERIT, TRUE ) == FALSE )
+	if( !write_inheritable && SetHandleInformation( write, HANDLE_FLAG_INHERIT, FALSE ) == FALSE )
 		throw std::system_error( GetLastError( ), std::system_category( ), "unable to set pipe read handle flag" );
+
+	read_handle.reset( new Handle( read ) );
+	write_handle.reset( new Handle( write ) );
 }
 
 Pipe::~Pipe( )
@@ -79,7 +154,7 @@ Pipe::~Pipe( )
 
 bool Pipe::IsValid( ) const
 {
-	return read_handle != nullptr || write_handle != nullptr;
+	return read_handle || write_handle;
 }
 
 bool Pipe::Seek( int64_t, SeekMode )
@@ -94,26 +169,26 @@ int64_t Pipe::Tell( ) const
 
 int64_t Pipe::Size( ) const
 {
-	if( read_handle == nullptr )
+	if( !read_handle )
 		return 0;
 
 	DWORD avail = 0;
-	PeekNamedPipe( read_handle, nullptr, 0, nullptr, &avail, nullptr );
+	PeekNamedPipe( *read_handle, nullptr, 0, nullptr, &avail, nullptr );
 	return avail;
 }
 
 bool Pipe::EndOfFile( ) const
 {
-	return read_handle == nullptr;
+	return static_cast<bool>( read_handle );
 }
 
 size_t Pipe::Read( void *data, size_t size )
 {
-	if( read_handle == nullptr )
+	if( !read_handle )
 		return 0;
 
 	DWORD avail = static_cast<DWORD>( Size( ) );
-	if( avail > 0 && ReadFile( read_handle, data, avail < size ? avail : static_cast<DWORD>( size ), &avail, nullptr ) == FALSE )
+	if( avail > 0 && ReadFile( *read_handle, data, avail < size ? avail : static_cast<DWORD>( size ), &avail, nullptr ) == FALSE )
 		return 0;
 
 	return avail;
@@ -121,34 +196,32 @@ size_t Pipe::Read( void *data, size_t size )
 
 size_t Pipe::Write( const void *data, size_t size )
 {
-	if( write_handle == nullptr )
+	if( !write_handle )
 		return 0;
 
 	DWORD written = 0;
-	WriteFile( write_handle, data, static_cast<DWORD>( size ), &written, nullptr );
+	WriteFile( *write_handle, data, static_cast<DWORD>( size ), &written, nullptr );
 	return written;
-}
-
-void *Pipe::ReadHandle( ) const
-{
-	return read_handle;
-}
-
-void *Pipe::WriteHandle( ) const
-{
-	return write_handle;
 }
 
 void Pipe::CloseRead( )
 {
-	CloseHandle( read_handle );
-	read_handle = nullptr;
+	read_handle.reset( );
 }
 
 void Pipe::CloseWrite( )
 {
-	CloseHandle( write_handle );
-	write_handle = nullptr;
+	write_handle.reset( );
+}
+
+const Pipe::Handle &Pipe::ReadHandle( ) const
+{
+	return *read_handle.get( );
+}
+
+const Pipe::Handle &Pipe::WriteHandle( ) const
+{
+	return *write_handle.get( );
 }
 
 } // namespace MultiLibrary

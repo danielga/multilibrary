@@ -34,32 +34,75 @@
  *
  *************************************************************************/
 
-#include <MultiLibrary/Common/Pipe.hpp>
+#include <MultiLibrary/Common/Linux/Pipe.hpp>
+#include <system_error>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/select.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 namespace MultiLibrary
 {
 
-Pipe::Pipe( void *read, void *write ) :
-	read_handle( read ),
-	write_handle( write )
+Pipe::Handle::Handle( int pipe ) :
+	internal( pipe )
 { }
 
-Pipe::Pipe( bool, bool ) :
-	read_handle( 0 ),
-	write_handle( 0 )
+Pipe::Handle::~Handle( )
 {
-	int handles[2] = { 0, 0 };
-	if( pipe( handles ) == 0 )
+	if( internal != -1 )
+		close( internal );
+}
+
+Pipe::Handle::operator int( ) const
+{
+	return internal;
+}
+
+Pipe::Pipe( Standard::Input in, Standard::Output out )
+{
+	int std_handle = -1;
+
+	if( in == Standard::Input::Normal )
 	{
-		fcntl( handles[0], F_SETFD, FD_CLOEXEC );
-		fcntl( handles[1], F_SETFD, FD_CLOEXEC );
-		read_handle = reinterpret_cast<void *>( handles[0] );
-		write_handle = reinterpret_cast<void *>( handles[1] );
+		if( ( std_handle = dup( 0 ) ) == -1 )
+			throw std::system_error( errno, std::system_category( ), "unable to duplicate standard input handle" );
+
+		read_handle.reset( new Handle( std_handle ) );
 	}
+
+	switch( out )
+	{
+		case Standard::Output::Normal:
+			if( ( std_handle = dup( 1 ) ) == -1 )
+				throw std::system_error( errno, std::system_category( ), "unable to duplicate standard output handle" );
+
+			write_handle.reset( new Handle( std_handle ) );
+			break;
+
+		case Standard::Output::Error:
+			if( ( std_handle = dup( 2 ) ) == -1 )
+				throw std::system_error( errno, std::system_category( ), "unable to duplicate standard error handle" );
+
+			write_handle.reset( new Handle( std_handle ) );
+			break;
+
+		default:
+			break;
+	}
+}
+
+Pipe::Pipe( bool, bool )
+{
+	int handles[2] = { -1, -1 };
+	if( pipe( handles ) != 0 )
+		throw std::system_error( errno, std::system_category( ), "unable to create pipe" );
+
+	fcntl( handles[0], F_SETFD, FD_CLOEXEC );
+	fcntl( handles[1], F_SETFD, FD_CLOEXEC );
+	read_handle.reset( new Handle( handles[0] ) );
+	write_handle.reset( new Handle( handles[1] ) );
 }
 
 Pipe::~Pipe( )
@@ -70,7 +113,7 @@ Pipe::~Pipe( )
 
 bool Pipe::IsValid( ) const
 {
-	return read_handle != 0 || write_handle != 0;
+	return read_handle || write_handle;
 }
 
 bool Pipe::Seek( int64_t, SeekMode )
@@ -85,8 +128,11 @@ int64_t Pipe::Tell( ) const
 
 int64_t Pipe::Size( ) const
 {
+	if( !read_handle )
+		return 0;
+
 	int size = 0;
-	if( ioctl( *reinterpret_cast<const int *>( &read_handle ), FIONREAD, &size ) == 0 )
+	if( ioctl( *read_handle, FIONREAD, &size ) == 0 )
 		return 0;
 
 	return 0;
@@ -94,18 +140,21 @@ int64_t Pipe::Size( ) const
 
 bool Pipe::EndOfFile( ) const
 {
-	return read_handle == 0;
+	return static_cast<bool>( read_handle );
 }
 
 size_t Pipe::Read( void *data, size_t size )
 {
+	if( !read_handle )
+		return 0;
+
 	fd_set rfds;
 	FD_ZERO( &rfds );
-	FD_SET( *reinterpret_cast<int *>( &read_handle ), &rfds );
+	FD_SET( *read_handle, &rfds );
 	timeval time = { 0, 0 };
 	if( select( 1, &rfds, nullptr, nullptr, &time ) == 1 )
 	{
-		ssize_t res = read( *reinterpret_cast<int *>( &read_handle ), data, size );
+		ssize_t res = read( *read_handle, data, size );
 		if( res >= 0 )
 			return res;
 	}
@@ -115,13 +164,16 @@ size_t Pipe::Read( void *data, size_t size )
 
 size_t Pipe::Write( const void *data, size_t size )
 {
+	if( !write_handle )
+		return 0;
+
 	fd_set rfds;
 	FD_ZERO( &rfds );
-	FD_SET( *reinterpret_cast<int *>( &write_handle ), &rfds );
+	FD_SET( *write_handle, &rfds );
 	timeval time = { 0, 0 };
 	if( select( 1, nullptr, &rfds, nullptr, &time ) == 1 )
 	{
-		ssize_t res = write( *reinterpret_cast<int *>( &write_handle ), data, size );
+		ssize_t res = write( *write_handle, data, size );
 		if( res >= 0 )
 			return res;
 	}
@@ -129,32 +181,24 @@ size_t Pipe::Write( const void *data, size_t size )
 	return 0;
 }
 
-void *Pipe::ReadHandle( ) const
-{
-	return read_handle;
-}
-
-void *Pipe::WriteHandle( ) const
-{
-	return write_handle;
-}
-
 void Pipe::CloseRead( )
 {
-	if( read_handle != 0 )
-	{
-		close( *reinterpret_cast<int *>( &read_handle ) );
-		read_handle = 0;
-	}
+	read_handle.reset( );
 }
 
 void Pipe::CloseWrite( )
 {
-	if( write_handle != 0 )
-	{
-		close( *reinterpret_cast<int *>( &write_handle ) );
-		write_handle = 0;
-	}
+	write_handle.reset( );
+}
+
+const Pipe::Handle &Pipe::ReadHandle( ) const
+{
+	return *read_handle.get( );
+}
+
+const Pipe::Handle &Pipe::WriteHandle( ) const
+{
+	return *write_handle.get( );
 }
 
 } // namespace MultiLibrary
