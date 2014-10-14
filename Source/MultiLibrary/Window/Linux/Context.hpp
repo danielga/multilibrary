@@ -44,13 +44,12 @@
 namespace MultiLibrary
 {
 
-struct VideoMode;
 struct WindowSettings;
 
 class MULTILIBRARY_WINDOW_API Context : public NonCopyable
 {
 public:
-	Context( Display *display, GLXDrawable window, const VideoMode &video_settings, const WindowSettings &window_setup );
+	Context( Display *display, GLXDrawable window, const WindowSettings &window_setup );
 	~Context( );
 
 	bool SetActive( bool active = true );

@@ -49,7 +49,7 @@ Context *current_context = nullptr;
 
 }
 
-Context::Context( Display *display, GLXDrawable window, const VideoMode &video_settings, const WindowSettings &window_setup ) :
+Context::Context( Display *display, GLXDrawable window, const WindowSettings &window_setup ) :
 	display_handle( display ),
 	window_handle( window ),
 	visual_info( nullptr ),
@@ -61,9 +61,9 @@ Context::Context( Display *display, GLXDrawable window, const VideoMode &video_s
 		GLX_RENDER_TYPE, GLX_RGBA_BIT,
 		GLX_X_RENDERABLE, GL_TRUE,
 		GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
-		GLX_RED_SIZE, video_settings.red_bits,
-		GLX_GREEN_SIZE, video_settings.green_bits,
-		GLX_BLUE_SIZE, video_settings.blue_bits,
+		GLX_RED_SIZE, window_setup.red_bits,
+		GLX_GREEN_SIZE, window_setup.green_bits,
+		GLX_BLUE_SIZE, window_setup.blue_bits,
 		GLX_ALPHA_SIZE, window_setup.alpha_bits,
 		GLX_DEPTH_SIZE, window_setup.depth_bits,
 		GLX_STENCIL_SIZE, window_setup.stencil_bits,

@@ -92,9 +92,9 @@ public:
 	int32_t blue_bits;
 	int32_t alpha_bits;
 	int32_t depth_bits;
+	int32_t stencil_bits;
 	int32_t refresh_rate;
 	int32_t samples;
-	int32_t stencil_bits;
 	int32_t opengl_major;
 	int32_t opengl_minor;
 };

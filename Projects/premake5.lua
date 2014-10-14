@@ -352,7 +352,10 @@ solution("MultiLibrary")
 				})
 
 				filter({"system:windows", "configurations:Debug or Release"})
-					links({"Common", "opengl32", "gdi32"})
+					links({"Common", "gdi32"})
+
+					filter({"system:windows", "configurations:Debug or Release", "options:not compile-glew"})
+						links({"glew32"})
 
 			filter("system:linux")
 				files({
@@ -361,7 +364,10 @@ solution("MultiLibrary")
 				})
 
 				filter({"system:linux", "configurations:Debug or Release"})
-					links({"Common", "GL"})
+					links({"Common"})
+
+					filter({"system:linux", "configurations:Debug or Release", "options:not compile-glew"})
+						links({"GLEW"})
 
 			filter("system:macosx")
 				files({
@@ -371,7 +377,9 @@ solution("MultiLibrary")
 
 				filter({"system:macosx", "configurations:Debug or Release"})
 					links({"Common"})
-					linkoptions({"-framework OpenGL"})
+
+					filter({"system:macosx", "configurations:Debug or Release", "options:not compile-glew"})
+						links({"GLEW"})
 
 		project("Visual")
 			uuid("64CE3AA5-430D-9548-8D34-58F982E583EF")
@@ -400,11 +408,19 @@ solution("MultiLibrary")
 				files({THIRDPARTY_FOLDER .. "/src/glew.c"})
 
 			filter({"system:windows", "configurations:Debug or Release"})
-				links({"Window", "Common", "opengl32"})
+				links({"Window", "Common"})
+
+				filter({"system:windows", "configurations:Debug or Release", "options:not compile-glew"})
+						links({"glew32"})
 
 			filter({"system:linux", "configurations:Debug or Release"})
-				links({"Window", "Common", "GL"})
+				links({"Window", "Common"})
+
+				filter({"system:linux", "configurations:Debug or Release", "options:not compile-glew"})
+						links({"GLEW"})
 
 			filter({"system:macosx", "configurations:Debug or Release"})
 				links({"Window", "Common"})
-				linkoptions("-framework OpenGL")
+
+				filter({"system:macosx", "configurations:Debug or Release", "options:not compile-glew"})
+						links({"GLEW"})

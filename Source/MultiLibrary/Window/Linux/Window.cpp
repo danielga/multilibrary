@@ -59,9 +59,9 @@ static const char window_class[] = "MultiLibrary";
 
 struct Window::Handle
 {
-	Handle( Display *display, ::Window handle, const VideoMode &video_settings, const WindowSettings &window_setup ) :
+	Handle( Display *display, ::Window handle, const WindowSettings &window_setup ) :
 		window( handle ),
-		context( display, handle, video_settings, window_setup )
+		context( display, handle, window_setup )
 	{
 		std::memset( keyboard_buttons, BUTTON_RELEASED, sizeof( keyboard_buttons ) );
 		std::memset( mouse_buttons, BUTTON_RELEASED, sizeof( mouse_buttons ) );
@@ -80,10 +80,10 @@ Window::Window( ) :
 	should_close( false )
 { }
 
-Window::Window( const std::string &title, const VideoMode &video_setup, const WindowSettings &window_setup ) :
+Window::Window( const std::string &title, const WindowSettings &window_setup ) :
 	should_close( false )
 {
-	Create( title, video_setup, window_setup );
+	Create( title, window_setup );
 }
 
 Window::~Window( )
@@ -94,7 +94,7 @@ bool Window::IsValid( ) const
 	return static_cast<bool>( window_internal );
 }
 
-bool Window::Create( const std::string &title, const VideoMode &video_setup, const WindowSettings &window_setup )
+bool Window::Create( const std::string &title, const WindowSettings &window_setup )
 {
 	if( IsValid( ) )
 		return false;
@@ -120,7 +120,7 @@ bool Window::Create( const std::string &title, const VideoMode &video_setup, con
 		display,
 		XDefaultRootWindow( display ),
 		0, 0,
-		video_setup.width, video_setup.height,
+		window_setup.width, window_setup.height,
 		0,
 		24,
 		InputOutput,
@@ -131,7 +131,7 @@ bool Window::Create( const std::string &title, const VideoMode &video_setup, con
 	if( window == None )
 		throw std::runtime_error( "unable to create window" );
 
-	window_internal = std::make_shared<Handle>( display, window, video_setup, window_setup );
+	window_internal = std::make_shared<Handle>( display, window, window_setup );
 	window_internal->monitor = window_setup.monitor;
 
 	return true;
@@ -350,14 +350,6 @@ Monitor Window::GetFullscreenMonitor( ) const
 		return Monitor( );
 
 	return window_internal->monitor;
-}
-
-VideoMode Window::GetVideoMode( ) const
-{
-	if( !IsValid( ) )
-		return VideoMode( );
-
-	return video_settings;
 }
 
 bool Window::IsFocused( ) const
