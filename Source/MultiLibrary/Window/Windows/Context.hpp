@@ -44,7 +44,6 @@
 namespace MultiLibrary
 {
 
-struct VideoMode;
 struct WindowSettings;
 
 class MULTILIBRARY_WINDOW_API Context : public NonCopyable

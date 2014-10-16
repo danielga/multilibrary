@@ -152,8 +152,8 @@ struct Window::Handle
 		std::memset( mouse_buttons, BUTTON_RELEASED, sizeof( mouse_buttons ) );
 	}
 
-	std::unique_ptr<HWND__, BOOL ( WINAPI * )( HWND window )> handle;
-	std::unique_ptr<HICON__, BOOL ( WINAPI * )( HICON icon )> icon;
+	std::unique_ptr<HWND__, BOOL ( WINAPI * )( HWND )> handle;
+	std::unique_ptr<HICON__, BOOL ( WINAPI * )( HICON )> icon;
 	Context context;
 	Monitor monitor;
 	DWORD flags;
@@ -193,11 +193,14 @@ bool Window::Create( const std::string &title, const WindowSettings &window_setu
 	UTF16::FromUTF8( title.begin( ), title.end( ), std::back_inserter( widetitle ) );
 
 	DWORD flags = WS_CLIPSIBLINGS | WS_CLIPCHILDREN, exflags = WS_EX_APPWINDOW | WS_EX_ACCEPTFILES;
-	int32_t x = CW_USEDEFAULT, y = CW_USEDEFAULT, w = 0, h = 0;
+	int32_t x = window_setup.x, y = window_setup.y, w = 0, h = 0;
 
 	if( window_setup.monitor.IsValid( ) )
 	{
 		flags |= WS_POPUP;
+
+		if( window_setup.visible )
+			flags |= WS_VISIBLE;
 
 		Vector2i pos = window_setup.monitor.GetPosition( );
 		x = pos.x;
@@ -221,6 +224,9 @@ bool Window::Create( const std::string &title, const WindowSettings &window_setu
 		{
 			flags |= WS_POPUP;
 		}
+
+		if( window_setup.visible )
+			flags |= WS_VISIBLE;
 
 		Internal::GetFullWindowSize( flags, exflags, window_setup.width, window_setup.height, w, h );
 	}

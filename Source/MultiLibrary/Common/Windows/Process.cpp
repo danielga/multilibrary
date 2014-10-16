@@ -47,22 +47,22 @@ class Process::Handle
 {
 public:
 	Handle( HANDLE proc ) :
-		internal( proc )
+		handle( proc )
 	{ }
 
 	~Handle( )
 	{
-		if( internal != nullptr )
-			CloseHandle( internal );
+		if( handle != nullptr )
+			CloseHandle( handle );
 	}
 
 	operator HANDLE( ) const
 	{
-		return internal;
+		return handle;
 	}
 
 private:
-	HANDLE internal;
+	HANDLE handle;
 };
 
 Process::Process( const std::string &path, const std::vector<std::string> &args ) :

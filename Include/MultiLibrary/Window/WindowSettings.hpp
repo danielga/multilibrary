@@ -50,6 +50,8 @@ public:
 		bool visible = true,
 		bool resizable = true,
 		bool decorated = true,
+		int32_t x = 0,
+		int32_t y = 0,
 		int32_t width = 0,
 		int32_t height = 0,
 		int32_t red_bits = 8,
@@ -67,6 +69,8 @@ public:
 		visible( visible ),
 		resizable( resizable ),
 		decorated( decorated ),
+		x( x ),
+		y( y ),
 		width( width ),
 		height( height ),
 		red_bits( red_bits ),
@@ -85,6 +89,8 @@ public:
 	bool visible;
 	bool resizable;
 	bool decorated;
+	int32_t x;
+	int32_t y;
 	int32_t width;
 	int32_t height;
 	int32_t red_bits;

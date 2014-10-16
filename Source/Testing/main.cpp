@@ -229,8 +229,11 @@ static void ThreadFunction( std::reference_wrapper<ML::Window> win )
 	ML::Stopwatch clock;
 	clock.Resume( );
 
+	ML::Stopwatch frame;
 	while( window.IsValid( ) && !window.ShouldClose( ) )
 	{
+		frame.Resume( );
+
 		// Clear the color and depth buffers
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
@@ -246,14 +249,16 @@ static void ThreadFunction( std::reference_wrapper<ML::Window> win )
 		glDrawArrays( GL_TRIANGLES, 0, 36 );
 
 		window.SwapBuffers( );
+
+		std::cout << "Frame time: " << frame.GetElapsedTime( ) / 1000.0 << '\n';
+		frame.Reset( );
 	}
 }
 
 static void TestWindow( )
 {
-	ML::Window window( "Tëst wíndow", ML::WindowSettings( ML::Monitor( ), true, false, true, 600, 400 ) );
-	window.SetPosition( ML::Vector2i( 50, 50 ) );
-	window.SetVisible( true );
+	ML::Window window( "Tëst wíndow", ML::WindowSettings( ML::Monitor( true ), true, false, true, 0, 0, 1920, 1080, 8, 8, 8, 8, 24, 8, 0, 8, 2, 0 ) );
+	window.SwapInterval( 60 );
 
 	std::thread thread( &ThreadFunction, std::ref( window ) );
 

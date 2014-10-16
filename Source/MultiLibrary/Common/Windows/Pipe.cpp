@@ -42,18 +42,18 @@ namespace MultiLibrary
 {
 
 Pipe::Handle::Handle( HANDLE proc ) :
-	internal( proc )
+	handle( proc )
 { }
 
 Pipe::Handle::~Handle( )
 {
-	if( internal != nullptr )
-		CloseHandle( internal );
+	if( handle != nullptr )
+		CloseHandle( handle );
 }
 
 Pipe::Handle::operator HANDLE( ) const
 {
-	return internal;
+	return handle;
 }
 
 Pipe::Pipe( Standard::Input in, Standard::Output out )

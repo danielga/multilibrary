@@ -92,9 +92,7 @@ public:
 	const Handle &GetHandle( ) const;
 
 private:
-	Monitor( Handle *handle );
-
-	std::shared_ptr<Handle> monitor_internal;
+	std::shared_ptr<Handle> handle;
 };
 
 } // namespace MultiLibrary

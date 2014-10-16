@@ -45,12 +45,28 @@ bool Mouse::IsButtonPressed( MouseButton button )
 	int32_t vkey = 0;
 	switch( button )
 	{
-		case MOUSE_BUTTON_LEFT:		vkey = GetSystemMetrics( SM_SWAPBUTTON ) != 0 ? VK_RBUTTON : VK_LBUTTON; break;
-		case MOUSE_BUTTON_RIGHT:	vkey = GetSystemMetrics( SM_SWAPBUTTON ) != 0 ? VK_LBUTTON : VK_RBUTTON; break;
-		case MOUSE_BUTTON_MIDDLE:	vkey = VK_MBUTTON; break;
-		case MOUSE_BUTTON_4:		vkey = VK_XBUTTON1; break;
-		case MOUSE_BUTTON_5:		vkey = VK_XBUTTON2; break;
-		default:					return false;
+		case MOUSE_BUTTON_LEFT:
+			vkey = GetSystemMetrics( SM_SWAPBUTTON ) != 0 ? VK_RBUTTON : VK_LBUTTON;
+			break;
+
+		case MOUSE_BUTTON_RIGHT:
+			vkey = GetSystemMetrics( SM_SWAPBUTTON ) != 0 ? VK_LBUTTON : VK_RBUTTON;
+			break;
+
+		case MOUSE_BUTTON_MIDDLE:
+			vkey = VK_MBUTTON;
+			break;
+
+		case MOUSE_BUTTON_4:
+			vkey = VK_XBUTTON1;
+			break;
+
+		case MOUSE_BUTTON_5:
+			vkey = VK_XBUTTON2;
+			break;
+
+		default:
+			return false;
 	}
 
 	return ( GetAsyncKeyState( vkey ) & 0x8000 ) != 0;

@@ -36,6 +36,7 @@
 
 #include <MultiLibrary/Window/Windows/Monitor.hpp>
 #include <MultiLibrary/Common/Unicode.hpp>
+#include <utility>
 #include <Windows.h>
 
 #if !defined EDS_ROTATEDMODE
@@ -47,70 +48,8 @@
 namespace MultiLibrary
 {
 
-Monitor::Handle::Handle( const std::string &mname, const std::wstring &widemname, int32_t w, int32_t h ) :
-	name( mname ),
-	widename( widemname ),
-	size( w, h )
-{ }
-
-Monitor::Handle::Handle( const Handle &m ) :
-	name( m.name ),
-	widename( m.widename ),
-	size( m.size )
-{ }
-
-Monitor::Monitor( bool use_primary_monitor ) :
-	monitor_internal( nullptr )
+namespace Internal
 {
-	if( use_primary_monitor )
-	{
-		std::vector<Monitor> monitors = GetMonitors( );
-		if( monitors.size( ) > 0 )
-			monitor_internal = std::make_shared<Handle>( *monitors[0].monitor_internal );
-	}
-}
-
-Monitor::Monitor( Handle *monitor ) :
-	monitor_internal( monitor )
-{ }
-
-bool Monitor::IsValid( ) const
-{
-	return monitor_internal != nullptr;
-}
-
-std::string Monitor::GetName( ) const
-{
-	if( !IsValid( ) )
-		return std::string( );
-
-	return monitor_internal->name;
-}
-
-Vector2i Monitor::GetPhysicalSize( ) const
-{
-	if( !IsValid( ) )
-		return Vector2i( );
-
-	return monitor_internal->size;
-}
-
-Vector2i Monitor::GetPosition( ) const
-{
-	Vector2i pos;
-	if( !IsValid( ) )
-		return pos;
-
-	DEVMODE settings;
-	ZeroMemory( &settings, sizeof( settings ) );
-	settings.dmSize = sizeof( settings );
-	if( EnumDisplaySettingsEx( monitor_internal->widename.c_str( ), ENUM_CURRENT_SETTINGS, &settings, EDS_ROTATEDMODE ) == FALSE )
-		return pos;
-
-	pos.x = settings.dmPosition.x;
-	pos.y = settings.dmPosition.y;
-	return pos;
-}
 
 static void SplitBitsPerPixel( int32_t bpp, int32_t &red_bits, int32_t &green_bits, int32_t &blue_bits )
 {
@@ -127,6 +66,67 @@ static void SplitBitsPerPixel( int32_t bpp, int32_t &red_bits, int32_t &green_bi
 		red_bits += 1;
 }
 
+}
+
+Monitor::Handle::Handle( HDC handle, const std::wstring &wname, const std::wstring &devwname, int32_t w, int32_t h ) :
+	device( handle, DeleteDC ),
+	wname( wname ),
+	device_wname( devwname ),
+	max_resolution( w, h )
+{
+	UTF8::FromUTF16( wname.begin( ), wname.end( ), std::back_inserter( name ) );
+	UTF8::FromUTF16( devwname.begin( ), devwname.end( ), std::back_inserter( device_name ) );
+}
+
+Monitor::Monitor( bool use_primary_monitor ) :
+	handle( nullptr )
+{
+	if( use_primary_monitor )
+	{
+		std::vector<Monitor> monitors = GetMonitors( );
+		if( monitors.size( ) > 0 )
+			handle.swap( monitors[0].handle );
+	}
+}
+
+bool Monitor::IsValid( ) const
+{
+	return static_cast<bool>( handle );
+}
+
+std::string Monitor::GetName( ) const
+{
+	if( !IsValid( ) )
+		return std::string( );
+
+	return handle->name;
+}
+
+Vector2i Monitor::GetPhysicalSize( ) const
+{
+	if( !IsValid( ) )
+		return Vector2i( );
+
+	return handle->max_resolution;
+}
+
+Vector2i Monitor::GetPosition( ) const
+{
+	Vector2i pos;
+	if( !IsValid( ) )
+		return pos;
+
+	DEVMODE settings;
+	ZeroMemory( &settings, sizeof( settings ) );
+	settings.dmSize = sizeof( settings );
+	if( EnumDisplaySettingsEx( handle->device_wname.c_str( ), ENUM_CURRENT_SETTINGS, &settings, EDS_ROTATEDMODE ) == FALSE )
+		return pos;
+
+	pos.x = settings.dmPosition.x;
+	pos.y = settings.dmPosition.y;
+	return pos;
+}
+
 VideoMode Monitor::GetDesktopMode( ) const
 {
 	VideoMode mode;
@@ -136,13 +136,13 @@ VideoMode Monitor::GetDesktopMode( ) const
 	DEVMODE dm;
 	ZeroMemory( &dm, sizeof( dm ) );
 	dm.dmSize = sizeof( dm );
-	if( EnumDisplaySettings( monitor_internal->widename.c_str( ), ENUM_CURRENT_SETTINGS, &dm ) == FALSE )
+	if( EnumDisplaySettings( handle->device_wname.c_str( ), ENUM_CURRENT_SETTINGS, &dm ) == FALSE )
 		return mode;
 
 	mode.width  = dm.dmPelsWidth;
 	mode.height = dm.dmPelsHeight;
 	mode.refresh_rate = dm.dmDisplayFrequency;
-	SplitBitsPerPixel( dm.dmBitsPerPel, mode.red_bits, mode.green_bits, mode.blue_bits );
+	Internal::SplitBitsPerPixel( dm.dmBitsPerPel, mode.red_bits, mode.green_bits, mode.blue_bits );
 
 	return mode;
 }
@@ -153,16 +153,8 @@ std::vector<GammaColors> Monitor::GetGammaRamp( ) const
 	if( !IsValid( ) )
 		return ramp;
 
-	DISPLAY_DEVICE display;
-	ZeroMemory( &display, sizeof( display ) );
-	display.cb = sizeof( display );
-	if( EnumDisplayDevices( monitor_internal->widename.c_str( ), 0, &display, 0 ) == FALSE )
-		return ramp;
-
 	WORD values[768];
-	HDC dc = CreateDC( L"DISPLAY", display.DeviceString, nullptr, nullptr );
-	GetDeviceGammaRamp( dc, values );
-	DeleteDC( dc );
+	GetDeviceGammaRamp( handle->device.get( ), values );
 
 	WORD *reds = values, *greens = values + 256, *blues = values + 512;
 	for( size_t i = 0; i < 256; ++i )
@@ -195,12 +187,6 @@ void Monitor::SetGammaRamp( const std::vector<GammaColors> &gamma_ramp )
 	if( !IsValid( ) || gamma_ramp.size( ) != 256 )
 		return;
 
-	DISPLAY_DEVICE display;
-	ZeroMemory( &display, sizeof( display ) );
-	display.cb = sizeof( display );
-	if( EnumDisplayDevices( monitor_internal->widename.c_str( ), 0, &display, 0 ) == FALSE )
-		return;
-
 	WORD values[768];
 	WORD *reds = values, *greens = values + 256, *blues = values + 512;
 	for( std::vector<GammaColors>::const_iterator it = gamma_ramp.begin( ); it != gamma_ramp.end( ); ++it )
@@ -211,9 +197,7 @@ void Monitor::SetGammaRamp( const std::vector<GammaColors> &gamma_ramp )
 		*blues++ = gamma.blue;
 	}
 
-	HDC dc = CreateDC( L"DISPLAY", display.DeviceString, nullptr, nullptr );
-	SetDeviceGammaRamp( dc, values );
-	DeleteDC( dc );
+	SetDeviceGammaRamp( handle->device.get( ), values );
 }
 
 std::vector<VideoMode> Monitor::GetFullscreenModes( ) const
@@ -223,16 +207,13 @@ std::vector<VideoMode> Monitor::GetFullscreenModes( ) const
 		return video_modes;
 
 	DEVMODE dm;
-	DWORD mode_index = 0;
-	for( ; ; )
+	for( DWORD mode_index = 0; ; ++mode_index )
 	{
 		ZeroMemory( &dm, sizeof( dm ) );
 		dm.dmSize = sizeof( dm );
 
-		if( EnumDisplaySettings( monitor_internal->widename.c_str( ), mode_index, &dm ) == FALSE )
+		if( EnumDisplaySettings( handle->device_wname.c_str( ), mode_index, &dm ) == FALSE )
 			break;
-
-		++mode_index;
 
 		if( dm.dmBitsPerPel < 15 )
 			continue;
@@ -241,7 +222,7 @@ std::vector<VideoMode> Monitor::GetFullscreenModes( ) const
 		mode.width  = dm.dmPelsWidth;
 		mode.height = dm.dmPelsHeight;
 		mode.refresh_rate = dm.dmDisplayFrequency;
-		SplitBitsPerPixel( dm.dmBitsPerPel, mode.red_bits, mode.green_bits, mode.blue_bits );
+		Internal::SplitBitsPerPixel( dm.dmBitsPerPel, mode.red_bits, mode.green_bits, mode.blue_bits );
 
 		video_modes.push_back( mode );
 	}
@@ -251,44 +232,41 @@ std::vector<VideoMode> Monitor::GetFullscreenModes( ) const
 
 const Monitor::Handle &Monitor::GetHandle( ) const
 {
-	return *monitor_internal.get( );
+	return *handle;
 }
 
 std::vector<Monitor> Monitor::GetMonitors( )
 {
-	DWORD adapter_index = 0;
+	DISPLAY_DEVICE adapter;
+	DISPLAY_DEVICE display;
 	std::vector<Monitor> monitors;
-	for( ; ; )
+	for( DWORD adapter_index = 0; ; ++adapter_index )
 	{
-		DISPLAY_DEVICE adapter;
 		ZeroMemory( &adapter, sizeof( adapter ) );
 		adapter.cb = sizeof( adapter );
 		if( EnumDisplayDevices( nullptr, adapter_index, &adapter, 0 ) == FALSE )
 			break;
 
-		++adapter_index;
-
 		if( adapter.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER || !( adapter.StateFlags & DISPLAY_DEVICE_ACTIVE ) )
 			continue;
 
-		DISPLAY_DEVICE display;
-		ZeroMemory( &display, sizeof( display ) );
-		display.cb = sizeof( display );
-		if( EnumDisplayDevices( adapter.DeviceName, 0, &display, 0 ) == FALSE )
-			continue;
+		for( DWORD monitor_index = 0; ; ++monitor_index )
+		{
+			ZeroMemory( &display, sizeof( display ) );
+			display.cb = sizeof( display );
+			if( EnumDisplayDevices( adapter.DeviceName, monitor_index, &display, 0 ) == FALSE )
+				break;
 
-		wchar_t *widename = adapter.DeviceName;
-		std::string narrowname;
-		UTF8::FromUTF16( widename, widename + wcslen( widename ), std::back_inserter( narrowname ) );
+			HDC dc = CreateDC( L"DISPLAY", display.DeviceString, nullptr, nullptr );
+			int32_t w = GetDeviceCaps( dc, HORZSIZE ), h = GetDeviceCaps( dc, VERTSIZE );
 
-		HDC dc = CreateDC( L"DISPLAY", display.DeviceString, nullptr, nullptr );
-		int32_t w = GetDeviceCaps( dc, HORZSIZE ), h = GetDeviceCaps( dc, VERTSIZE );
-		DeleteDC( dc );
-
-		if( adapter.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE )
-			monitors.insert( monitors.begin( ), Monitor( new Handle( narrowname, widename, w, h ) ) );
-		else
-			monitors.push_back( Monitor( new Handle( narrowname, widename, w, h ) ) );
+			Monitor monitor;
+			monitor.handle = std::make_shared<Handle>( dc, display.DeviceString, display.DeviceName, w, h );
+			if( display.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE )
+				monitors.insert( monitors.begin( ), monitor );
+			else
+				monitors.push_back( monitor );
+		}
 	}
 
 	return monitors;

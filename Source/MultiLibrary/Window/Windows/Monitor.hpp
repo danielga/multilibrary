@@ -40,19 +40,22 @@
 #include <MultiLibrary/Window/Monitor.hpp>
 #include <MultiLibrary/Common/Vector2.hpp>
 #include <string>
+#include <memory>
+#include <Windows.h>
 
 namespace MultiLibrary
 {
 
 struct Monitor::Handle
 {
-	Handle( const std::string &mname, const std::wstring &widemname, int32_t w, int32_t h );
+	Handle( HDC handle, const std::wstring &wname, const std::wstring &devwname, int32_t w, int32_t h );
 
-	Handle( const Handle &m );
-
+	std::unique_ptr<HDC__, BOOL ( WINAPI * )( HDC )> device;
 	std::string name;
-	std::wstring widename;
-	Vector2i size;
+	std::wstring wname;
+	std::string device_name;
+	std::wstring device_wname;
+	Vector2i max_resolution;
 };
 
 } // namespace MultiLibrary

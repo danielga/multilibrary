@@ -69,6 +69,7 @@ Context::Context( HWND window, const WindowSettings &window_settings ) :
 			WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
 			WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
 			WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+			WGL_COLOR_BITS_ARB, window_settings.red_bits + window_settings.green_bits + window_settings.blue_bits,
 			WGL_RED_BITS_ARB, window_settings.red_bits,
 			WGL_GREEN_BITS_ARB, window_settings.green_bits,
 			WGL_BLUE_BITS_ARB, window_settings.blue_bits,
@@ -81,7 +82,8 @@ Context::Context( HWND window, const WindowSettings &window_settings ) :
 		};
 
 		uint32_t num_formats = 0;
-		wglChoosePixelFormatARB( device_context, pixel_attributes, nullptr, 1, &format, &num_formats );
+		if( wglChoosePixelFormatARB( device_context, pixel_attributes, nullptr, 1, &format, &num_formats ) == GL_FALSE )
+			throw std::runtime_error( "unable to get appropriate pixel format" );
 	}
 	else
 	{
@@ -105,11 +107,9 @@ Context::Context( HWND window, const WindowSettings &window_settings ) :
 			0, 0, 0
 		};
 
-		format = ChoosePixelFormat( device_context, &pfd );
+		if( ( format = ChoosePixelFormat( device_context, &pfd ) ) == 0 )
+			throw std::runtime_error( "unable to get appropriate pixel format" );
 	}
-
-	if( format == 0 )
-		throw std::runtime_error( "unable to get appropriate pixel format" );
 
 	PIXELFORMATDESCRIPTOR pixel_format;
 	if( DescribePixelFormat( device_context, format, sizeof( PIXELFORMATDESCRIPTOR ), &pixel_format ) == 0 )

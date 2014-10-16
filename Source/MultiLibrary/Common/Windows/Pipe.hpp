@@ -52,7 +52,7 @@ public:
 	operator HANDLE( ) const;
 
 private:
-	HANDLE internal;
+	HANDLE handle;
 };
 
 } // namespace MultiLibrary
