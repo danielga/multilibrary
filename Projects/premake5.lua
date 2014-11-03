@@ -2,15 +2,21 @@ if not _ACTION then
 	error("no action defined")
 end
 
+SOURCE_FOLDER = "../Source"
+INCLUDE_FOLDER = "../Include"
+THIRDPARTY_FOLDER = os.get() .. "/" .. (_OPTIONS["thirdparty-folder"] or "thirdparty")
+PROJECT_FOLDER = os.get() .. "/" .. _ACTION
+
 if _ACTION == "clean" then
-	local folders = os.matchdirs("*")
+	local rmfmt = "rmdir /s " .. _MAIN_SCRIPT_DIR .. "/%s"
+	if not os.is("windows") then
+		rmfmt = "rm -rf " .. _MAIN_SCRIPT_DIR .. "/%s"
+	end
+
+	local folders = os.matchdirs(os.get() .. "/*")
 	for _, folder in pairs(folders) do
-		local subfolders = os.matchdirs(folder .. "/*")
-		for _, subfolder in pairs(subfolders) do
-			local subsubfolders = os.matchdirs(subfolder .. "/*")
-			for _, subsubfolder in pairs(subsubfolders) do
-				os.rmdir(subsubfolder)
-			end
+		if folder ~= THIRDPARTY_FOLDER then
+			os.outputof(rmfmt:format(folder))
 		end
 	end
 
@@ -33,10 +39,34 @@ newoption({
 	description = "Sets the path of third-party libraries relative to the current system projects folder (\"thirdparty\" would use \"Projects/windows/thirdparty\", for example, on Windows)."
 })
 
-SOURCE_FOLDER = "../Source"
-INCLUDE_FOLDER = "../Include"
-THIRDPARTY_FOLDER = os.get() .. "/" .. (_OPTIONS["thirdparty-folder"] or "thirdparty")
-PROJECT_FOLDER = os.get() .. "/" .. _ACTION
+local pkg_config_parsers = {
+	l = function(lib)
+		links(lib)
+	end,
+	L = function(libsfolder)
+		libdirs(libsfolder)
+	end,
+	I = function(incfolder)
+		includedirs(incfolder)
+	end,
+	D = function(define)
+		defines(define)
+	end
+}
+
+local function pkg_config(cmds)
+	local output = os.outputof("pkg-config %s" .. table.concat(cmds, " "))
+	if output ~= nil and output ~= "" then
+		for w in output:gmatch("%S+") do
+			local l = w:sub(2, 2)
+			if w:sub(1, 1) == "-" and pkg_config_parsers[l] then
+				pkg_config_parsers[l](w:sub(3))
+			else
+				print("unrecognized pkg-config output '" .. w .. "'")
+			end
+		end
+	end
+end
 
 solution("MultiLibrary")
 	uuid("8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942")
@@ -46,6 +76,7 @@ solution("MultiLibrary")
 	flags({"NoPCH", "Unicode"})
 	platforms({"x86", "x64"})
 	configurations({"Release", "Debug", "StaticRelease", "StaticDebug"})
+	startproject("Testing")
 
 	filter("platforms:x86")
 		architecture("x32")
@@ -55,6 +86,9 @@ solution("MultiLibrary")
 
 	filter("options:static-runtime")
 		flags({"StaticRuntime"})
+
+	filter("action:gmake")
+		buildoptions({"-std=c++11"})
 
 	filter("system:windows")
 		defines({"UNICODE", "_UNICODE", "WIN32_LEAN_AND_MEAN", "WINVER=0x0601", "_WIN32_WINNT=0x0601", "_CRT_SECURE_NO_DEPRECATE"})
@@ -155,17 +189,18 @@ solution("MultiLibrary")
 			links({"opengl32"})
 
 		filter({"system:linux", "configurations:StaticDebug or StaticRelease"})
-			links({"pthread", "avcodec", "avformat", "avutil", "swscale", "swresample", "openal", "GL"})
+			pkg_config({"--cflags", "--libs", "x11", "glew", "openal", "libavcodec", "libavformat", "libavutil", "libswscale", "libswresample"})
+			links("pthread")
 
 		filter({"system:linux", "configurations:Debug or Release"})
-			links({"GL"})
+			pkg_config({"--cflags", "--libs", "gl"})
+			links("pthread")
 
 		filter({"system:macosx", "configurations:StaticDebug or StaticRelease"})
-			links({"pthread", "avcodec", "avformat", "avutil", "swscale", "swresample"})
-			linkoptions({"-framework OpenAL", "-framework OpenGL"})
+			links({"pthread", "avcodec", "avformat", "avutil", "swscale", "swresample", "OpenAL.framework", "OpenGL.framework"})
 
 		filter({"system:macosx", "configurations:Debug or Release"})
-			linkoptions({"-framework OpenGL"})
+			links({"OpenGL.framework"})
 
 	project("Child")
 		kind("ConsoleApp")
@@ -238,14 +273,14 @@ solution("MultiLibrary")
 				links({"Common", "avcodec", "avformat", "avutil", "swscale", "swresample", "openal32"})
 
 			filter("system:linux")
-				includedirs({"/usr/include/ffmpeg"})
+				pkg_config({"--cflags", "openal", "libavcodec", "libavformat", "libavutil", "libswscale", "libswresample"})
 
 				filter({"system:linux", "configurations:Debug or Release"})
-					links({"Common", "avcodec", "avformat", "avutil", "swscale", "swresample", "openal"})
+					links({"Common"})
+					pkg_config({"--libs", "openal", "libavcodec", "libavformat", "libavutil", "libswscale", "libswresample"})
 
 			filter({"system:macosx", "configurations:Debug or Release"})
-				links({"Common", "avcodec", "avformat", "avutil", "swscale", "swresample"})
-				linkoptions({"-framework OpenAL"})
+				links({"Common", "avcodec", "avformat", "avutil", "swscale", "swresample", "OpenAL.framework"})
 
 		project("Filesystem")
 			uuid("19FB0DFA-1EC6-9C48-A24A-375F1A17B432")
@@ -365,9 +400,10 @@ solution("MultiLibrary")
 
 				filter({"system:linux", "configurations:Debug or Release"})
 					links({"Common"})
+					pkg_config({"--cflags", "--libs", "x11"})
 
 					filter({"system:linux", "configurations:Debug or Release", "options:not compile-glew"})
-						links({"GLEW"})
+						pkg_config({"--cflags", "--libs", "glew"})
 
 			filter("system:macosx")
 				files({
@@ -417,7 +453,7 @@ solution("MultiLibrary")
 				links({"Window", "Common"})
 
 				filter({"system:linux", "configurations:Debug or Release", "options:not compile-glew"})
-						links({"GLEW"})
+						pkg_config({"--cflags", "--libs", "glew"})
 
 			filter({"system:macosx", "configurations:Debug or Release"})
 				links({"Window", "Common"})

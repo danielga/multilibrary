@@ -39,7 +39,7 @@
 #include <MultiLibrary/Window/Export.hpp>
 #include <MultiLibrary/Common/NonCopyable.hpp>
 #include <GL/glew.h>
-#include <GL/glx.h>
+#include <GL/glxew.h>
 
 namespace MultiLibrary
 {

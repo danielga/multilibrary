@@ -418,12 +418,10 @@ void Window::SwapBuffers( )
 
 void Window::SwapInterval( int32_t refreshes )
 {
-/*
 	if( !IsValid( ) && glXSwapIntervalEXT == nullptr )
 		return;
 
 	glXSwapIntervalEXT( window_internal->context.display_handle, window_internal->context.window_handle, refreshes );
-*/
 }
 
 void Window::PollEvents( )

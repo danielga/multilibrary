@@ -74,13 +74,13 @@ Context::Context( Display *display, GLXDrawable window, const WindowSettings &wi
 	window_setup.monitor; // use for 2nd parameter of glXChooseFBConfig
 	GLXFBConfig *configs = glXChooseFBConfig( display_handle, 0, pixel_attributes, &elems );
 	if( configs == nullptr || elems <= 0 )
-		throw std::runtime_error( "blah blah" );
+		throw std::runtime_error( "failed to choose context config" );
 
 	if( ( visual_info = glXGetVisualFromFBConfig( display_handle, configs[0] ) ) == nullptr )
-		throw std::runtime_error( "blah blah" );
+		throw std::runtime_error( "failed to get visual info from context config" );
 
 	if( ( context_handle = glXCreateNewContext( display_handle, configs[0], GLX_RGBA_TYPE, nullptr, false ) ) == nullptr )
-		throw std::runtime_error( "blah blah" );
+		throw std::runtime_error( "failed to create context" );
 }
 
 Context::~Context( )

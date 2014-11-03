@@ -44,27 +44,23 @@ struct Monitor::Handle
 {
 	std::string name;
 	std::wstring widename;
-	Vector2i size;
+	Vector2i max_resolution;
 };
 
 Monitor::Monitor( bool use_primary_monitor ) :
-	monitor_internal( nullptr )
+	handle( nullptr )
 {
 	if( use_primary_monitor )
 	{
 		std::vector<Monitor> monitors = GetMonitors( );
 		if( monitors.size( ) > 0 )
-			monitor_internal.reset( new Handle( *monitors[0].monitor_internal ) );
+			handle.swap( monitors[0].handle );
 	}
 }
 
-Monitor::Monitor( Handle *monitor ) :
-	monitor_internal( monitor )
-{ }
-
 bool Monitor::IsValid( ) const
 {
-	return monitor_internal != nullptr;
+	return static_cast<bool>( handle );
 }
 
 std::string Monitor::GetName( ) const
@@ -72,7 +68,7 @@ std::string Monitor::GetName( ) const
 	if( !IsValid( ) )
 		return std::string( );
 
-	return monitor_internal->name;
+	return handle->name;
 }
 
 Vector2i Monitor::GetPhysicalSize( ) const
@@ -80,7 +76,7 @@ Vector2i Monitor::GetPhysicalSize( ) const
 	if( !IsValid( ) )
 		return Vector2i( );
 
-	return monitor_internal->size;
+	return handle->max_resolution;
 }
 
 Vector2i Monitor::GetPosition( ) const
@@ -152,7 +148,7 @@ std::vector<VideoMode> Monitor::GetFullscreenModes( ) const
 
 const Monitor::Handle &Monitor::GetHandle( ) const
 {
-	return *monitor_internal.get( );
+	return *handle;
 }
 
 std::vector<Monitor> Monitor::GetMonitors( )
