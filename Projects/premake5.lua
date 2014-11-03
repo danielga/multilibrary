@@ -59,9 +59,9 @@ local function pkg_config(cmds)
 	local libs = {}
 	for i = 1, #cmds do
 		if cmds[i] == "--libs" then
-			shoudlink = true
+			shouldlink = true
 		elseif cmds[i]:sub(1, 1) ~= "-" then
-			table.insert(libs, cmds[i])
+			table.insert(libs, cmds[i]:match("^lib(.+)$") or cmds[i])
 		end
 	end
 
