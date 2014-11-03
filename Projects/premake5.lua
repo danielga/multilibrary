@@ -8,9 +8,9 @@ THIRDPARTY_FOLDER = os.get() .. "/" .. (_OPTIONS["thirdparty-folder"] or "thirdp
 PROJECT_FOLDER = os.get() .. "/" .. _ACTION
 
 if _ACTION == "clean" then
-	local rmfmt = "rmdir /s " .. _MAIN_SCRIPT_DIR .. "/%s"
+	local rmfmt = "rmdir /s /q \"" .. _MAIN_SCRIPT_DIR .. "/%s\""
 	if not os.is("windows") then
-		rmfmt = "rm -rf " .. _MAIN_SCRIPT_DIR .. "/%s"
+		rmfmt = "rm -rf \"" .. _MAIN_SCRIPT_DIR .. "/%s\""
 	end
 
 	local folders = os.matchdirs(os.get() .. "/*")
@@ -55,17 +55,37 @@ local pkg_config_parsers = {
 }
 
 local function pkg_config(cmds)
-	local output = os.outputof("pkg-config %s" .. table.concat(cmds, " "))
-	if output ~= nil and output ~= "" then
-		for w in output:gmatch("%S+") do
-			local l = w:sub(2, 2)
-			if w:sub(1, 1) == "-" and pkg_config_parsers[l] then
-				pkg_config_parsers[l](w:sub(3))
-			else
-				print("unrecognized pkg-config output '" .. w .. "'")
+	local shouldlink = false
+	local libs = {}
+	for i = 1, #cmds do
+		if cmds[i] == "--libs" then
+			shoudlink = true
+		elseif cmds[i]:sub(1, 1) ~= "-" then
+			table.insert(libs, cmds[i])
+		end
+	end
+
+	if shouldlink then
+		links(libs)
+	end
+end
+
+if (os.is("windows") and os.outputof("where pkg-config") ~= "") or (not os.is("windows") and os.outputof("which pkg-config") ~= "") then
+	pkg_config = function(cmds)
+		local output = os.outputof("pkg-config " .. table.concat(cmds, " "))
+		if output ~= "" then
+			for w in output:gmatch("%S+") do
+				local l = w:sub(2, 2)
+				if w:sub(1, 1) == "-" and pkg_config_parsers[l] then
+					pkg_config_parsers[l](w:sub(3))
+				else
+					print("unrecognized pkg-config output '" .. w .. "'")
+				end
 			end
 		end
 	end
+else
+	print("pkg-config doesn't exist")
 end
 
 solution("MultiLibrary")
