@@ -70,9 +70,10 @@ local function pkg_config(cmds)
 	end
 end
 
-if (os.is("windows") and os.outputof("where pkg-config") ~= "") or (not os.is("windows") and os.outputof("which pkg-config") ~= "") then
+local version = os.outputof("pkg-config --version")
+if version ~= "" then
 	pkg_config = function(cmds)
-		local output = os.outputof("pkg-config " .. table.concat(cmds, " "))
+		local output = os.outputof("pkg-config --silence-errors " .. table.concat(cmds, " "))
 		if output ~= "" then
 			for w in output:gmatch("%S+") do
 				local l = w:sub(2, 2)
@@ -85,7 +86,7 @@ if (os.is("windows") and os.outputof("where pkg-config") ~= "") or (not os.is("w
 		end
 	end
 else
-	print("pkg-config doesn't exist")
+	print("pkg-config doesn't exist, going with the default behavior of premake links")
 end
 
 solution("MultiLibrary")
