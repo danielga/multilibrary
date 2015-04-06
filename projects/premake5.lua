@@ -2,8 +2,8 @@ if not _ACTION then
 	error("no action defined")
 end
 
-SOURCE_FOLDER = "../Source"
-INCLUDE_FOLDER = "../Include"
+SOURCE_FOLDER = "../source"
+INCLUDE_FOLDER = "../include"
 THIRDPARTY_FOLDER = os.get() .. "/" .. (_OPTIONS["thirdparty-folder"] or "thirdparty")
 PROJECT_FOLDER = os.get() .. "/" .. _ACTION
 
@@ -131,64 +131,64 @@ solution("MultiLibrary")
 		optimize("On")
 		vectorextensions("SSE2")
 		kind("SharedLib")
-		objdir(PROJECT_FOLDER .. "/Intermediate")
+		objdir(PROJECT_FOLDER .. "/intermediate")
 
 		filter({"configurations:Release", "platforms:x86"})
-			targetdir(PROJECT_FOLDER .. "/x86/Release")
-			debugdir(PROJECT_FOLDER .. "/x86/Release")
+			targetdir(PROJECT_FOLDER .. "/x86/release")
+			debugdir(PROJECT_FOLDER .. "/x86/release")
 
 		filter({"configurations:Release", "platforms:x64"})
-			targetdir(PROJECT_FOLDER .. "/x64/Release")
-			debugdir(PROJECT_FOLDER .. "/x64/Release")
+			targetdir(PROJECT_FOLDER .. "/x64/release")
+			debugdir(PROJECT_FOLDER .. "/x64/release")
 
 	filter({"configurations:Debug"})
 		defines({"MULTILIBRARY_DEBUG"})
 		flags({"Symbols"})
 		kind("SharedLib")
-		objdir(PROJECT_FOLDER .. "/Intermediate")
+		objdir(PROJECT_FOLDER .. "/intermediate")
 
 		filter({"configurations:Debug", "platforms:x86"})
-			targetdir(PROJECT_FOLDER .. "/x86/Debug")
-			debugdir(PROJECT_FOLDER .. "/x86/Debug")
+			targetdir(PROJECT_FOLDER .. "/x86/debug")
+			debugdir(PROJECT_FOLDER .. "/x86/debug")
 
 		filter({"configurations:Debug", "platforms:x64"})
-			targetdir(PROJECT_FOLDER .. "/x64/Debug")
-			debugdir(PROJECT_FOLDER .. "/x64/Debug")
+			targetdir(PROJECT_FOLDER .. "/x64/debug")
+			debugdir(PROJECT_FOLDER .. "/x64/debug")
 
 	filter({"configurations:StaticRelease"})
 		defines({"MULTILIBRARY_STATIC"})
 		optimize("On")
 		vectorextensions("SSE2")
 		kind("StaticLib")
-		objdir(PROJECT_FOLDER .. "/Intermediate")
+		objdir(PROJECT_FOLDER .. "/intermediate")
 
 		filter({"configurations:StaticRelease", "options:static-runtime"})
 			flags({"StaticRuntime"})
 
 		filter({"configurations:StaticRelease", "platforms:x86"})
-			targetdir(PROJECT_FOLDER .. "/x86/StaticRelease")
-			debugdir(PROJECT_FOLDER .. "/x86/StaticRelease")
+			targetdir(PROJECT_FOLDER .. "/x86/staticrelease")
+			debugdir(PROJECT_FOLDER .. "/x86/staticrelease")
 
 		filter({"configurations:StaticRelease", "platforms:x64"})
-			targetdir(PROJECT_FOLDER .. "/x64/StaticRelease")
-			debugdir(PROJECT_FOLDER .. "/x64/StaticRelease")
+			targetdir(PROJECT_FOLDER .. "/x64/staticrelease")
+			debugdir(PROJECT_FOLDER .. "/x64/staticrelease")
 
 	filter({"configurations:StaticDebug"})
 		defines({"MULTILIBRARY_DEBUG", "MULTILIBRARY_STATIC"})
 		flags({"Symbols"})
 		kind("StaticLib")
-		objdir(PROJECT_FOLDER .. "/Intermediate")
+		objdir(PROJECT_FOLDER .. "/intermediate")
 
 		filter({"configurations:StaticDebug", "options:static-runtime"})
 			flags({"StaticRuntime"})
 
 		filter({"configurations:StaticDebug", "platforms:x86"})
-			targetdir(PROJECT_FOLDER .. "/x86/StaticDebug")
-			debugdir(PROJECT_FOLDER .. "/x86/StaticDebug")
+			targetdir(PROJECT_FOLDER .. "/x86/staticdebug")
+			debugdir(PROJECT_FOLDER .. "/x86/staticdebug")
 
 		filter({"configurations:StaticDebug", "platforms:x64"})
-			targetdir(PROJECT_FOLDER .. "/x64/StaticDebug")
-			debugdir(PROJECT_FOLDER .. "/x64/StaticDebug")
+			targetdir(PROJECT_FOLDER .. "/x64/staticdebug")
+			debugdir(PROJECT_FOLDER .. "/x64/staticdebug")
 
 	project("Testing")
 		uuid("A9FBF5DC-08A5-1840-9169-FA049E25EBA7")
