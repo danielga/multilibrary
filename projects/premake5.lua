@@ -1,28 +1,3 @@
-if not _ACTION then
-	error("no action defined")
-end
-
-SOURCE_FOLDER = "../source"
-INCLUDE_FOLDER = "../include"
-THIRDPARTY_FOLDER = os.get() .. "/" .. (_OPTIONS["thirdparty-folder"] or "thirdparty")
-PROJECT_FOLDER = os.get() .. "/" .. _ACTION
-
-if _ACTION == "clean" then
-	local rmfmt = "rmdir /s /q \"" .. _MAIN_SCRIPT_DIR .. "/%s\""
-	if not os.is("windows") then
-		rmfmt = "rm -rf \"" .. _MAIN_SCRIPT_DIR .. "/%s\""
-	end
-
-	local folders = os.matchdirs(os.get() .. "/*")
-	for _, folder in pairs(folders) do
-		if folder ~= THIRDPARTY_FOLDER then
-			os.outputof(rmfmt:format(folder))
-		end
-	end
-
-	return
-end
-
 newoption({
 	trigger = "static-runtime",
 	description = "Force the use of the static C runtime (only works with static builds)"
@@ -38,6 +13,31 @@ newoption({
 	value = "thirdparty (default)",
 	description = "Sets the path of third-party libraries relative to the current system projects folder (\"thirdparty\" would use \"Projects/windows/thirdparty\", for example, on Windows)."
 })
+
+if not _ACTION then
+	error("no action defined")
+end
+
+SOURCE_FOLDER = "../source"
+INCLUDE_FOLDER = "../include"
+THIRDPARTY_FOLDER = os.target() .. "/" .. (_OPTIONS["thirdparty-folder"] or "thirdparty")
+PROJECT_FOLDER = os.target() .. "/" .. _ACTION
+
+if _ACTION == "clean" then
+	local rmfmt = "rmdir /s /q \"" .. _MAIN_SCRIPT_DIR .. "/%s\""
+	if not os.is("windows") then
+		rmfmt = "rm -rf \"" .. _MAIN_SCRIPT_DIR .. "/%s\""
+	end
+
+	local folders = os.matchdirs(os.target() .. "/*")
+	for _, folder in pairs(folders) do
+		if folder ~= THIRDPARTY_FOLDER then
+			os.outputof(rmfmt:format(folder))
+		end
+	end
+
+	return
+end
 
 local pkg_config_parsers = {
 	l = function(lib)
@@ -70,8 +70,8 @@ local function pkg_config(cmds)
 	end
 end
 
-local version = os.outputof("pkg-config --version")
-if version ~= "" then
+local version, code = os.outputof("pkg-config --version")
+if version ~= "" and version ~= "'pkg-config' is not recognized as an internal or external command,\noperable program or batch file." then
 	pkg_config = function(cmds)
 		local output = os.outputof("pkg-config --silence-errors " .. table.concat(cmds, " "))
 		if output ~= "" then
@@ -94,7 +94,8 @@ solution("MultiLibrary")
 	language("C++")
 	location(PROJECT_FOLDER)
 	warnings("Extra")
-	flags({"NoPCH", "Unicode"})
+	flags("NoPCH")
+	characterset("Unicode")
 	platforms({"x86", "x64"})
 	configurations({"Release", "Debug", "StaticRelease", "StaticDebug"})
 	startproject("Testing")
@@ -106,26 +107,26 @@ solution("MultiLibrary")
 		architecture("x64")
 
 	filter("options:static-runtime")
-		flags({"StaticRuntime"})
+		flags("StaticRuntime")
 
 	filter("action:gmake")
-		buildoptions({"-std=c++11"})
+		buildoptions("-std=c++11")
 
 	filter("system:windows")
 		defines({"UNICODE", "_UNICODE", "WIN32_LEAN_AND_MEAN", "WINVER=0x0601", "_WIN32_WINNT=0x0601", "_CRT_SECURE_NO_DEPRECATE"})
-		includedirs({THIRDPARTY_FOLDER .. "/include"})
+		includedirs(THIRDPARTY_FOLDER .. "/include")
 
 		filter({"system:windows", "platforms:x86"})
-			libdirs({THIRDPARTY_FOLDER .. "/lib/x86"})
+			libdirs(THIRDPARTY_FOLDER .. "/lib/x86")
 
 		filter({"system:windows", "platforms:x64"})
-			libdirs({THIRDPARTY_FOLDER .. "/lib/x64"})
+			libdirs(THIRDPARTY_FOLDER .. "/lib/x64")
 
 	filter("system:linux")
-		includedirs({THIRDPARTY_FOLDER .. "/include"})
+		includedirs(THIRDPARTY_FOLDER .. "/include")
 
 	filter("system:macosx")
-		includedirs({THIRDPARTY_FOLDER .. "/include"})
+		includedirs(THIRDPARTY_FOLDER .. "/include")
 
 	filter("configurations:Release")
 		optimize("On")
@@ -141,9 +142,9 @@ solution("MultiLibrary")
 			targetdir(PROJECT_FOLDER .. "/x64/release")
 			debugdir(PROJECT_FOLDER .. "/x64/release")
 
-	filter({"configurations:Debug"})
-		defines({"MULTILIBRARY_DEBUG"})
-		flags({"Symbols"})
+	filter("configurations:Debug")
+		defines("MULTILIBRARY_DEBUG")
+		symbols("On")
 		kind("SharedLib")
 		objdir(PROJECT_FOLDER .. "/intermediate")
 
@@ -155,15 +156,15 @@ solution("MultiLibrary")
 			targetdir(PROJECT_FOLDER .. "/x64/debug")
 			debugdir(PROJECT_FOLDER .. "/x64/debug")
 
-	filter({"configurations:StaticRelease"})
-		defines({"MULTILIBRARY_STATIC"})
+	filter("configurations:StaticRelease")
+		defines("MULTILIBRARY_STATIC")
 		optimize("On")
 		vectorextensions("SSE2")
 		kind("StaticLib")
 		objdir(PROJECT_FOLDER .. "/intermediate")
 
 		filter({"configurations:StaticRelease", "options:static-runtime"})
-			flags({"StaticRuntime"})
+			flags("StaticRuntime")
 
 		filter({"configurations:StaticRelease", "platforms:x86"})
 			targetdir(PROJECT_FOLDER .. "/x86/staticrelease")
@@ -173,14 +174,14 @@ solution("MultiLibrary")
 			targetdir(PROJECT_FOLDER .. "/x64/staticrelease")
 			debugdir(PROJECT_FOLDER .. "/x64/staticrelease")
 
-	filter({"configurations:StaticDebug"})
+	filter("configurations:StaticDebug")
 		defines({"MULTILIBRARY_DEBUG", "MULTILIBRARY_STATIC"})
-		flags({"Symbols"})
+		symbols("On")
 		kind("StaticLib")
 		objdir(PROJECT_FOLDER .. "/intermediate")
 
 		filter({"configurations:StaticDebug", "options:static-runtime"})
-			flags({"StaticRuntime"})
+			flags("StaticRuntime")
 
 		filter({"configurations:StaticDebug", "platforms:x86"})
 			targetdir(PROJECT_FOLDER .. "/x86/staticdebug")
@@ -194,15 +195,15 @@ solution("MultiLibrary")
 		uuid("A9FBF5DC-08A5-1840-9169-FA049E25EBA7")
 		kind("ConsoleApp")
 		targetname("testing")
-		includedirs({INCLUDE_FOLDER})
+		includedirs(INCLUDE_FOLDER)
 		vpaths({["Sources"] = SOURCE_FOLDER .. "/Testing/**.cpp"})
-		files({SOURCE_FOLDER .. "/Testing/main.cpp"})
+		files(SOURCE_FOLDER .. "/Testing/main.cpp")
 		links({"Media", "Filesystem", "Network", "Window", "Visual", "Common"})
 
 		filter("options:compile-glew")
-			defines({"GLEW_STATIC"})
+			defines("GLEW_STATIC")
 			vpaths({["Sources"] = THIRDPARTY_FOLDER .. "/src/**.c"})
-			files({THIRDPARTY_FOLDER .. "/src/glew.c"})
+			files(THIRDPARTY_FOLDER .. "/src/glew.c")
 
 		filter({"system:windows", "configurations:StaticDebug or StaticRelease"})
 			links({"avcodec", "avformat", "avutil", "swscale", "swresample", "openal32", "ws2_32", "opengl32", "gdi32"})
@@ -211,7 +212,7 @@ solution("MultiLibrary")
 				links("glew32")
 
 		filter({"system:windows", "configurations:Debug or Release"})
-			links({"opengl32"})
+			links("opengl32")
 
 		filter({"system:linux", "configurations:StaticDebug or StaticRelease"})
 			pkg_config({"--cflags", "--libs", "x11", "gl", "openal", "libavcodec", "libavformat", "libavutil", "libswscale", "libswresample"})
@@ -231,22 +232,22 @@ solution("MultiLibrary")
 				links("GLEW")
 
 		filter({"system:macosx", "configurations:Debug or Release"})
-			links({"OpenGL.framework"})
+			links("OpenGL.framework")
 
 	project("Child")
 		uuid("CF9AA3B0-6410-11E4-9803-0800200C9A66")
 		kind("ConsoleApp")
 		targetname("child")
-		includedirs({INCLUDE_FOLDER})
+		includedirs(INCLUDE_FOLDER)
 		vpaths({["Sources"] = SOURCE_FOLDER .. "/Testing/**.cpp"})
-		files({SOURCE_FOLDER .. "/Testing/child.cpp"})
+		files(SOURCE_FOLDER .. "/Testing/child.cpp")
 		links({"Filesystem", "Common"})
 
 	group("MultiLibrary")
 		project("Common")
 			uuid("B172660C-0AB8-B24F-8BED-F729A0DE3CBB")
 			targetname("ml-common")
-			defines({"MULTILIBRARY_COMMON_EXPORT"})
+			defines("MULTILIBRARY_COMMON_EXPORT")
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
 				["Headers"] = {
@@ -309,7 +310,7 @@ solution("MultiLibrary")
 				pkg_config({"--cflags", "openal", "libavcodec", "libavformat", "libavutil", "libswscale", "libswresample"})
 
 				filter({"system:linux", "configurations:Debug or Release"})
-					links({"Common"})
+					links("Common")
 					pkg_config({"--libs", "openal", "libavcodec", "libavformat", "libavutil", "libswscale", "libswresample"})
 
 			filter({"system:macosx", "configurations:Debug or Release"})
@@ -318,7 +319,7 @@ solution("MultiLibrary")
 		project("Filesystem")
 			uuid("19FB0DFA-1EC6-9C48-A24A-375F1A17B432")
 			targetname("ml-filesystem")
-			defines({"MULTILIBRARY_FILESYSTEM_EXPORT"})
+			defines("MULTILIBRARY_FILESYSTEM_EXPORT")
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
 				["Headers"] = {
@@ -341,7 +342,7 @@ solution("MultiLibrary")
 				})
 
 				filter({"system:windows", "configurations:Debug or Release"})
-					links({"Common"})
+					links("Common")
 
 			filter("system:linux")
 				files({
@@ -350,7 +351,7 @@ solution("MultiLibrary")
 				})
 
 				filter({"system:linux", "configurations:Debug or Release"})
-					links({"Common"})
+					links("Common")
 
 			filter("system:macosx")
 				files({
@@ -359,12 +360,12 @@ solution("MultiLibrary")
 				})
 
 				filter({"system:macosx", "configurations:Debug or Release"})
-					links({"Common"})
+					links("Common")
 
 		project("Network")
 			uuid("5734F344-4AC5-B34A-8C8E-A614CFD25A91")
 			targetname("ml-network")
-			defines({"MULTILIBRARY_NETWORK_EXPORT"})
+			defines("MULTILIBRARY_NETWORK_EXPORT")
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
 				["Headers"] = {
@@ -384,15 +385,15 @@ solution("MultiLibrary")
 				links({"Common", "ws2_32"})
 
 			filter({"system:linux", "configurations:Debug or Release"})
-				links({"Common"})
+				links("Common")
 
 			filter({"system:macosx", "configurations:Debug or Release"})
-				links({"Common"})
+				links("Common")
 
 		project("Window")
 			uuid("B4B2441D-77C4-7A4E-9A89-319CE6A0F2E3")
 			targetname("ml-window")
-			defines({"MULTILIBRARY_WINDOW_EXPORT"})
+			defines("MULTILIBRARY_WINDOW_EXPORT")
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
 				["Headers"] = {
@@ -409,9 +410,9 @@ solution("MultiLibrary")
 			})
 
 			filter("options:compile-glew")
-				defines({"GLEW_STATIC"})
+				defines("GLEW_STATIC")
 				vpaths({["Sources"] = THIRDPARTY_FOLDER .. "/src/**.c"})
-				files({THIRDPARTY_FOLDER .. "/src/glew.c"})
+				files(THIRDPARTY_FOLDER .. "/src/glew.c")
 
 			filter("system:windows")
 				files({
@@ -423,7 +424,7 @@ solution("MultiLibrary")
 					links({"Common", "gdi32", "opengl32"})
 
 					filter({"system:windows", "configurations:Debug or Release", "options:not compile-glew"})
-						links({"glew32"})
+						links("glew32")
 
 			filter("system:linux")
 				files({
@@ -432,7 +433,7 @@ solution("MultiLibrary")
 				})
 
 				filter({"system:linux", "configurations:Debug or Release"})
-					links({"Common"})
+					links("Common")
 					pkg_config({"--cflags", "--libs", "x11", "gl"})
 
 					filter({"system:linux", "configurations:Debug or Release", "options:not compile-glew"})
@@ -448,12 +449,12 @@ solution("MultiLibrary")
 					links({"Common", "OpenGL.framework"})
 
 					filter({"system:macosx", "configurations:Debug or Release", "options:not compile-glew"})
-						links({"GLEW"})
+						links("GLEW")
 
 		project("Visual")
 			uuid("64CE3AA5-430D-9548-8D34-58F982E583EF")
 			targetname("ml-visual")
-			defines({"MULTILIBRARY_VISUAL_EXPORT"})
+			defines("MULTILIBRARY_VISUAL_EXPORT")
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
 				["Headers"] = {
@@ -472,15 +473,15 @@ solution("MultiLibrary")
 			})
 
 			filter("options:compile-glew")
-				defines({"GLEW_STATIC"})
+				defines("GLEW_STATIC")
 				vpaths({["Sources"] = THIRDPARTY_FOLDER .. "/src/**.c"})
-				files({THIRDPARTY_FOLDER .. "/src/glew.c"})
+				files(THIRDPARTY_FOLDER .. "/src/glew.c")
 
 			filter({"system:windows", "configurations:Debug or Release"})
 				links({"Window", "Common", "opengl32"})
 
 				filter({"system:windows", "configurations:Debug or Release", "options:not compile-glew"})
-						links({"glew32"})
+						links("glew32")
 
 			filter({"system:linux", "configurations:Debug or Release"})
 				links({"Window", "Common"})
@@ -493,4 +494,4 @@ solution("MultiLibrary")
 				links({"Window", "Common", "OpenGL.framework"})
 
 				filter({"system:macosx", "configurations:Debug or Release", "options:not compile-glew"})
-						links({"GLEW"})
+						links("GLEW")
