@@ -2,7 +2,7 @@
  * MultiLibrary - danielga.bitbucket.org/multilibrary
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014, Daniel Almeida
+ * Copyright (c) 2014-2017, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
