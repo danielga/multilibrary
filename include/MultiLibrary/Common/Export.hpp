@@ -1,5 +1,5 @@
 /*************************************************************************
- * MultiLibrary - danielga.bitbucket.org/multilibrary
+ * MultiLibrary - http://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
  * Copyright (c) 2014-2017, Daniel Almeida

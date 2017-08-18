@@ -196,13 +196,13 @@ solution("MultiLibrary")
 		kind("ConsoleApp")
 		targetname("testing")
 		includedirs(INCLUDE_FOLDER)
-		vpaths({["Sources"] = SOURCE_FOLDER .. "/Testing/**.cpp"})
+		vpaths({["Source files"] = SOURCE_FOLDER .. "/Testing/**.cpp"})
 		files(SOURCE_FOLDER .. "/Testing/main.cpp")
 		links({"Media", "Filesystem", "Network", "Window", "Visual", "Common"})
 
 		filter("options:compile-glew")
 			defines("GLEW_STATIC")
-			vpaths({["Sources"] = THIRDPARTY_FOLDER .. "/src/**.c"})
+			vpaths({["Source files"] = THIRDPARTY_FOLDER .. "/src/**.c"})
 			files(THIRDPARTY_FOLDER .. "/src/glew.c")
 
 		filter({"system:windows", "configurations:StaticDebug or StaticRelease"})
@@ -239,7 +239,7 @@ solution("MultiLibrary")
 		kind("ConsoleApp")
 		targetname("child")
 		includedirs(INCLUDE_FOLDER)
-		vpaths({["Sources"] = SOURCE_FOLDER .. "/Testing/**.cpp"})
+		vpaths({["Source files"] = SOURCE_FOLDER .. "/Testing/**.cpp"})
 		files(SOURCE_FOLDER .. "/Testing/child.cpp")
 		links({"Filesystem", "Common"})
 
@@ -250,12 +250,14 @@ solution("MultiLibrary")
 			defines("MULTILIBRARY_COMMON_EXPORT")
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
-				["Headers"] = {
-					SOURCE_FOLDER .. "/MultiLibrary/**.hpp",
+				["Header files"] = {
 					INCLUDE_FOLDER .. "/MultiLibrary/**.hpp",
 					INCLUDE_FOLDER .. "/MultiLibrary/**.inl"
 				},
-				["Sources"] = SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
+				["Source files"] = {
+					SOURCE_FOLDER .. "/MultiLibrary/**.hpp",
+					SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
+				}
 			})
 			files({
 				SOURCE_FOLDER .. "/MultiLibrary/Common/*.cpp",
@@ -290,11 +292,11 @@ solution("MultiLibrary")
 			defines({"MULTILIBRARY_MEDIA_EXPORT", "__STDC_CONSTANT_MACROS"})
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
-				["Headers"] = {
+				["Header files"] = INCLUDE_FOLDER .. "/MultiLibrary/**.hpp",
+				["Source files"] = {
 					SOURCE_FOLDER .. "/MultiLibrary/**.hpp",
-					INCLUDE_FOLDER .. "/MultiLibrary/**.hpp"
-				},
-				["Sources"] = SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
+					SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
+				}
 			})
 			files({
 				SOURCE_FOLDER .. "/MultiLibrary/Media/*.cpp",
@@ -322,11 +324,11 @@ solution("MultiLibrary")
 			defines("MULTILIBRARY_FILESYSTEM_EXPORT")
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
-				["Headers"] = {
+				["Header files"] = INCLUDE_FOLDER .. "/MultiLibrary/**.hpp",
+				["Source files"] = {
 					SOURCE_FOLDER .. "/MultiLibrary/**.hpp",
-					INCLUDE_FOLDER .. "/MultiLibrary/**.hpp"
-				},
-				["Sources"] = SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
+					SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
+				}
 			})
 			files({
 				SOURCE_FOLDER .. "/MultiLibrary/Filesystem/*.cpp",
@@ -368,11 +370,11 @@ solution("MultiLibrary")
 			defines("MULTILIBRARY_NETWORK_EXPORT")
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
-				["Headers"] = {
+				["Header files"] = INCLUDE_FOLDER .. "/MultiLibrary/**.hpp",
+				["Source files"] = {
 					SOURCE_FOLDER .. "/MultiLibrary/**.hpp",
-					INCLUDE_FOLDER .. "/MultiLibrary/**.hpp"
-				},
-				["Sources"] = SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
+					SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
+				}
 			})
 			files({
 				SOURCE_FOLDER .. "/MultiLibrary/Network/*.cpp",
@@ -396,11 +398,11 @@ solution("MultiLibrary")
 			defines("MULTILIBRARY_WINDOW_EXPORT")
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
-				["Headers"] = {
+				["Header files"] = INCLUDE_FOLDER .. "/MultiLibrary/**.hpp",
+				["Source files"] = {
 					SOURCE_FOLDER .. "/MultiLibrary/**.hpp",
-					INCLUDE_FOLDER .. "/MultiLibrary/**.hpp"
-				},
-				["Sources"] = SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
+					SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
+				}
 			})
 			files({
 				SOURCE_FOLDER .. "/MultiLibrary/Window/*.cpp",
@@ -411,7 +413,7 @@ solution("MultiLibrary")
 
 			filter("options:compile-glew")
 				defines("GLEW_STATIC")
-				vpaths({["Sources"] = THIRDPARTY_FOLDER .. "/src/**.c"})
+				vpaths({["Source files"] = THIRDPARTY_FOLDER .. "/src/**.c"})
 				files(THIRDPARTY_FOLDER .. "/src/glew.c")
 
 			filter("system:windows")
@@ -457,11 +459,9 @@ solution("MultiLibrary")
 			defines("MULTILIBRARY_VISUAL_EXPORT")
 			includedirs({INCLUDE_FOLDER, SOURCE_FOLDER})
 			vpaths({
-				["Headers"] = {
+				["Header files"] = INCLUDE_FOLDER .. "/MultiLibrary/**.hpp",
+				["Source files"] = {
 					SOURCE_FOLDER .. "/MultiLibrary/**.hpp",
-					INCLUDE_FOLDER .. "/MultiLibrary/**.hpp"
-				},
-				["Sources"] = {
 					SOURCE_FOLDER .. "/MultiLibrary/**.cpp"
 				}
 			})
@@ -474,7 +474,7 @@ solution("MultiLibrary")
 
 			filter("options:compile-glew")
 				defines("GLEW_STATIC")
-				vpaths({["Sources"] = THIRDPARTY_FOLDER .. "/src/**.c"})
+				vpaths({["Source files"] = THIRDPARTY_FOLDER .. "/src/**.c"})
 				files(THIRDPARTY_FOLDER .. "/src/glew.c")
 
 			filter({"system:windows", "configurations:Debug or Release"})
