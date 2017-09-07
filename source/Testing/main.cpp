@@ -130,17 +130,26 @@ static void TestFilesystem( )
 
 static void TestAudio( )
 {
-	ML::AudioDevice device;
-
-	ML::Sound sound;
+	try
 	{
-		ML::SoundBuffer buffer;
-		buffer.Load( "some_music.mp3" );
+		ML::AudioDevice device;
 
-		sound.SetBuffer( buffer );
-		sound.Play( );
+		ML::Sound sound;
+		{
+			ML::SoundBuffer buffer;
+			buffer.Load( "some_music.mp3" );
 
-		std::this_thread::sleep_for( std::chrono::seconds( 5 ) );
+			sound.SetBuffer( buffer );
+			sound.Play( );
+
+			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+
+			sound.ResetPublisher( );
+		}
+	}
+	catch( const std::exception &e )
+	{
+		std::cout << e.what( ) << std::endl;
 	}
 }
 
@@ -288,8 +297,8 @@ int main( int, char ** )
 	//TestSockets( );
 	//TestStrings( );
 	//TestFilesystem( );
-	//TestAudio( );
-	TestWindow( );
+	TestAudio( );
+	//TestWindow( );
 	//TestProcess( );
 	return 0;
 }
