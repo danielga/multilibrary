@@ -37,6 +37,7 @@
 #pragma once
 
 #include <MultiLibrary/Media/Export.hpp>
+#include <MultiLibrary/Common/Publisher.hpp>
 #include <chrono>
 #include <string>
 #include <vector>
@@ -48,11 +49,11 @@ namespace MultiLibrary
 class InputStream;
 class MediaDecoder;
 
-class MULTILIBRARY_MEDIA_API SoundBuffer
+class MULTILIBRARY_MEDIA_API SoundBuffer : public Publisher
 {
 public:
 	SoundBuffer( );
-	~SoundBuffer( );
+	virtual ~SoundBuffer( );
 
 	bool Load( const std::string &filename );
 	bool Load( const void *data, size_t bytes );

@@ -49,6 +49,7 @@ SoundBuffer::SoundBuffer( )
 
 SoundBuffer::~SoundBuffer( )
 {
+	UnsubscribeAll( );
 	alCheck( alDeleteBuffers( 1, &buffer_id ) );
 }
 

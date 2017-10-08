@@ -37,6 +37,7 @@
 #pragma once
 
 #include <MultiLibrary/Common/Export.hpp>
+#include <unordered_set>
 
 namespace MultiLibrary
 {
@@ -48,15 +49,18 @@ class Publisher;
  */
 class MULTILIBRARY_COMMON_API Subscriber
 {
-public:
+protected:
 	Subscriber( );
 	virtual ~Subscriber( );
 
-	virtual void ResetPublisher( );
-	virtual void SetPublisher( Publisher &publisher );
+	virtual bool AddPublisher( Publisher &publisher, bool update_publisher = true );
+	virtual bool RemovePublisher( Publisher &publisher, bool update_publisher = true );
+	void RemovePublishers( );
 
 private:
-	Publisher *publisher;
+	std::unordered_set<Publisher *> publishers;
+
+	friend Publisher;
 };
 
 } // namespace MultiLibrary

@@ -47,7 +47,7 @@ Sound::Sound( ) :
 
 Sound::~Sound( )
 {
-	Stop( );
+	ResetBuffer( );
 }
 
 void Sound::Play( )
@@ -67,11 +67,23 @@ void Sound::Stop( )
 
 void Sound::SetBuffer( SoundBuffer &soundbuffer )
 {
+	ResetBuffer( );
+
+	AddPublisher( soundbuffer );
 	sound_buffer = &soundbuffer;
 	alCheck( alSourcei( audio_source, AL_BUFFER, soundbuffer.GetBufferIndex( ) ) );
 }
 
-const SoundBuffer &Sound::GetBuffer( )
+void Sound::ResetBuffer( )
+{
+	if( sound_buffer != nullptr )
+	{
+		RemovePublisher( *sound_buffer, true );
+		ResetBufferInternal( );
+	}
+}
+
+const SoundBuffer &Sound::GetBuffer( ) const
 {
 	return *sound_buffer;
 }
@@ -100,14 +112,20 @@ std::chrono::microseconds Sound::GetPlayingOffset( )
 	return std::chrono::microseconds( static_cast<int64_t>( secs * 1000000 ) );
 }
 
-void Sound::ResetPublisher( )
+void Sound::ResetBufferInternal( )
 {
-	if( sound_buffer != nullptr )
-	{
-		Stop( );
-		alCheck( alSourcei( audio_source, AL_BUFFER, 0 ) );
-		sound_buffer = nullptr;
-	}
+	Stop( );
+	alCheck( alSourcei( audio_source, AL_BUFFER, 0 ) );
+	sound_buffer = nullptr;
+}
+
+bool Sound::RemovePublisher( Publisher &publisher, bool update_publisher )
+{
+	Publisher *pub = &publisher;
+	if( pub == sound_buffer )
+		ResetBufferInternal( );
+
+	return Subscriber::RemovePublisher( publisher, update_publisher );
 }
 
 } // namespace MultiLibrary

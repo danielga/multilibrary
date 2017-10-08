@@ -36,27 +36,45 @@
 
 #include <MultiLibrary/Common/Subscriber.hpp>
 #include <MultiLibrary/Common/Publisher.hpp>
+#include <tuple>
 
 namespace MultiLibrary
 {
 
-Subscriber::Subscriber( ) :
-	publisher( nullptr )
+Subscriber::Subscriber( )
 { }
 
 Subscriber::~Subscriber( )
 {
-
+	RemovePublishers( );
 }
 
-void Subscriber::ResetPublisher( )
+bool Subscriber::AddPublisher( Publisher &pub, bool update_publisher )
 {
+	bool success = false;
+	std::tie( std::ignore, success ) = publishers.insert( &pub );
 
+	if( update_publisher && success )
+		pub.Subscribe( *this, false );
+
+	return success;
 }
 
-void Subscriber::SetPublisher( Publisher &publisher )
+bool Subscriber::RemovePublisher( Publisher &pub, bool update_publisher )
 {
+	bool success = publishers.erase( &pub ) != 0;
+	if( update_publisher && success )
+		pub.Unsubscribe( *this, false );
 
+	return success;
+}
+
+void Subscriber::RemovePublishers( )
+{
+	for( auto it = publishers.begin( ); it != publishers.end( ); ++it )
+		( *it )->Unsubscribe( *this, false );
+
+	publishers.clear( );
 }
 
 } // namespace MultiLibrary

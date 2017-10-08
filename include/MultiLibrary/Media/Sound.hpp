@@ -38,6 +38,7 @@
 
 #include <MultiLibrary/Media/Export.hpp>
 #include <MultiLibrary/Media/SoundSource.hpp>
+#include <MultiLibrary/Common/Subscriber.hpp>
 #include <chrono>
 
 namespace MultiLibrary
@@ -45,7 +46,7 @@ namespace MultiLibrary
 
 class SoundBuffer;
 
-class MULTILIBRARY_MEDIA_API Sound : public SoundSource
+class MULTILIBRARY_MEDIA_API Sound : public SoundSource, public Subscriber
 {
 public:
 	Sound( );
@@ -56,7 +57,8 @@ public:
 	void Stop( );
 
 	void SetBuffer( SoundBuffer &soundbuffer );
-	const SoundBuffer &GetBuffer( );
+	void ResetBuffer( );
+	const SoundBuffer &GetBuffer( ) const;
 
 	void SetLoop( bool loop );
 	bool GetLoop( );
@@ -64,9 +66,10 @@ public:
 	void SetPlayingOffset( const std::chrono::microseconds &timeOffset );
 	std::chrono::microseconds GetPlayingOffset( );
 
-	void ResetPublisher( );
-
 private:
+	void ResetBufferInternal( );
+	virtual bool RemovePublisher( Publisher &publisher, bool update_publisher ) override;
+
 	SoundBuffer *sound_buffer;
 };
 

@@ -67,22 +67,22 @@
 
 static void TestSockets( )
 {
-	std::cout << ML::IPAddress( "google.com", 80 ).ToString( ) << "\n";
+	std::cout << ML::IPAddress( "google.com", 80 ).ToString( ) << std::endl;
 
 	ML::HTTP http( "google.com", 80 );
 	ML::HTTP::Response response = http.SendRequest( ML::HTTP::Request( ), 3000 );
-	std::cout << response.GetStatus( ) << "\n" << response.GetBody( ) << "\n\n";
+	std::cout << response.GetStatus( ) << std::endl << response.GetBody( ) << std::endl << std::endl;
 
-	std::string str(
+	ML::ByteBuffer buffer;
+	char data[100] = { 0 };
+	buffer >> data;
+	buffer <<
 		"GET / HTTP/1.1\r\n"
 		"Content-Length: 0\r\n"
 		"Host: google.com\r\n"
 		"From: someguy\r\n"
 		"User-Agent: multilibrarynetwork\r\n"
-		"\r\n"
-	);
-	ML::ByteBuffer buffer;
-	buffer << str;
+		"\r\n";
 
 	ML::SocketTCP socket;
 	socket.Connect( ML::IPAddress( "google.com", 80 ) );
@@ -90,9 +90,11 @@ static void TestSockets( )
 	buffer.Seek( 0 );
 	buffer.Resize( 1000 );
 	socket.Receive( buffer, 0 );
+
+	std::string str;
 	buffer >> str;
 
-	std::cout << str << "\n";
+	std::cout << str << std::endl;
 
 	if( !buffer )
 		std::cout << "Not valid\n";
@@ -142,9 +144,7 @@ static void TestAudio( )
 			sound.SetBuffer( buffer );
 			sound.Play( );
 
-			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-
-			sound.ResetPublisher( );
+			std::this_thread::sleep_for( std::chrono::milliseconds( 5000 ) );
 		}
 	}
 	catch( const std::exception &e )
@@ -294,10 +294,10 @@ static void TestProcess( )
 
 int main( int, char ** )
 {
-	//TestSockets( );
+	TestSockets( );
 	//TestStrings( );
 	//TestFilesystem( );
-	TestAudio( );
+	//TestAudio( );
 	//TestWindow( );
 	//TestProcess( );
 	return 0;

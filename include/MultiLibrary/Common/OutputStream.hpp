@@ -68,128 +68,12 @@ public:
 
 	 \overload
 	 */
-	virtual OutputStream &operator<<( const bool &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const int8_t &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const uint8_t &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const int16_t &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const uint16_t &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const int32_t &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const uint32_t &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const int64_t &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const uint64_t &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const float &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const double &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const char &data );
+	template<typename Type>
+	OutputStream &operator<<( const Type &data )
+	{
+		Write( &data, sizeof( Type ) );
+		return *this;
+	}
 
 	/*!
 	 \brief Write data into the buffer from an array.
@@ -200,7 +84,7 @@ public:
 
 	 \overload
 	 */
-	virtual OutputStream &operator<<( const char *data );
+	OutputStream &operator<<( const char *data );
 
 	/*!
 	 \brief Write data into the buffer from an object.
@@ -211,18 +95,7 @@ public:
 
 	 \overload
 	 */
-	virtual OutputStream &operator<<( const std::string &data );
-
-	/*!
-	 \brief Write data into the buffer from a variable.
-
-	 \param data Data to write.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual OutputStream &operator<<( const wchar_t &data );
+	OutputStream &operator<<( const std::string &data );
 
 	/*!
 	 \brief Write data into the buffer from an array.
@@ -233,7 +106,7 @@ public:
 
 	 \overload
 	 */
-	virtual OutputStream &operator<<( const wchar_t *data );
+	OutputStream &operator<<( const wchar_t *data );
 
 	/*!
 	 \brief Write data into the buffer from an object.
@@ -244,7 +117,7 @@ public:
 
 	 \overload
 	 */
-	virtual OutputStream &operator<<( const std::wstring &data );
+	OutputStream &operator<<( const std::wstring &data );
 };
 
 } // namespace MultiLibrary

@@ -64,28 +64,37 @@ public:
 	bool operator!( ) const;
 
 	/*!
+	\brief Set the current position for read/write operations.
+
+	\param position Position value.
+
+	\return true if it succeeds, false if it fails.
+	*/
+	virtual bool Seek( size_t position ) = 0;
+
+	/*!
 	 \brief Set the current position for read/write operations.
 
 	 \param position Position value.
-	 \param mode (Optional) Type of seeking pretended.
+	 \param mode Type of seeking pretended.
 
 	 \return true if it succeeds, false if it fails.
 	 */
-	virtual bool Seek( int64_t position, SeekMode mode = SEEKMODE_SET ) = 0;
+	virtual bool Seek( int64_t position, SeekMode mode ) = 0;
 
 	/*!
 	 \brief Get the current position.
 
 	 \return Current position.
 	 */
-	virtual int64_t Tell( ) const = 0;
+	virtual size_t Tell( ) const = 0;
 
 	/*!
 	 \brief Get the size.
 
 	 \return Size of internal data.
 	 */
-	virtual int64_t Size( ) const = 0;
+	virtual size_t Size( ) const = 0;
 
 	/*!
 	 \brief Return whether we reached end of file or not.
