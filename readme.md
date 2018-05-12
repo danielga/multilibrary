@@ -8,8 +8,8 @@ This library requires premake 5 to create the build projects/makefiles. Execute 
 
 All thirdparty libraries and header files can be placed inside projects/os_name/thirdparty (or a path of your choice if you change --thirdparty-folder) and follows the structure:
 
-	include (has the header files)
-	lib (has the files for linking)
-		x64 (x86-64 linking files)
-		x86 (x86 linking files)
-	src (has the files for source code, right now only glew can be compiled)
+    include (has the header files)
+    lib (has the files for linking)
+        x64 (x86-64 linking files)
+        x86 (x86 linking files)
+    src (has the files for source code, right now only glew can be compiled)
