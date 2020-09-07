@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #include <MultiLibrary/Window/Windows/Context.hpp>
@@ -60,10 +59,10 @@ Context::Context( HWND window, const WindowSettings &window_settings ) :
 	if( ( device_context = GetDC( window_handle ) ) == nullptr )
 		throw std::runtime_error( "unable to get device context of window" );
 
-	int format = 0;
+	int32_t format = 0;
 	if( wglChoosePixelFormatARB != nullptr )
 	{
-		const int pixel_attributes[] = {
+		const int32_t pixel_attributes[] = {
 			WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
 			WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
 			WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
@@ -120,7 +119,7 @@ Context::Context( HWND window, const WindowSettings &window_settings ) :
 
 	if( wglCreateContextAttribsARB != nullptr )
 	{
-		const int context_attributes[] = {
+		const int32_t context_attributes[] = {
 			WGL_CONTEXT_MAJOR_VERSION_ARB, window_settings.opengl_major,
 			WGL_CONTEXT_MINOR_VERSION_ARB, window_settings.opengl_minor,
 			0

@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #pragma once
@@ -65,8 +64,8 @@ public:
 	std::string ToANSI( ) const;
 	std::wstring ToWideString( ) const;
 	std::string ToUTF8( ) const;
-	std::basic_string<uint16_t> ToUTF16( ) const;
-	std::basic_string<uint32_t> ToUTF32( ) const;
+	std::u16string ToUTF16( ) const;
+	std::u32string ToUTF32( ) const;
 
 	operator std::string( ) const;
 	operator std::wstring( ) const;

@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #include <MultiLibrary/Media/SoundStream.hpp>
@@ -85,12 +84,12 @@ void SoundStream::Stop( )
 	is_streaming = false;
 }
 
-unsigned int SoundStream::GetChannelCount( ) const
+uint32_t SoundStream::GetChannelCount( ) const
 {
 	return channel_count;
 }
 
-unsigned int SoundStream::GetSampleRate( ) const
+uint32_t SoundStream::GetSampleRate( ) const
 {
 	return sample_rate;
 }

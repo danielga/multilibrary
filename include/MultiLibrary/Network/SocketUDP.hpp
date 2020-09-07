@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #pragma once
@@ -47,7 +46,7 @@ class MULTILIBRARY_NETWORK_API SocketUDP : public Socket
 public:
 	SocketUDP( IPAddressFamily family = FAMILY_INET );
 
-	virtual SocketError Listen( int max_con_requests );
+	virtual SocketError Listen( int32_t max_con_requests );
 
 	virtual bool Open( );
 

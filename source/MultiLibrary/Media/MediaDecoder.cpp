@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #include <MultiLibrary/Media/MediaDecoder.hpp>
@@ -46,6 +45,8 @@ extern "C"
 	#include <libavutil/channel_layout.h>
 }
 
+using namespace std::chrono_literals;
+
 namespace MultiLibrary
 {
 
@@ -59,11 +60,11 @@ MediaDecoder::MediaDecoder( ) :
 	input_stream( nullptr ),
 	audio_channels( 0 ),
 	audio_samplerate( 0 ),
-	audio_duration( std::chrono::microseconds::zero( ) ),
+	audio_duration( 0us ),
 	video_width( 0 ),
 	video_height( 0 ),
 	video_framerate( 0.0f ),
-	video_duration( std::chrono::microseconds::zero( ) ),
+	video_duration( 0us ),
 	swr_context( nullptr ),
 	sws_context( nullptr )
 {
@@ -193,12 +194,12 @@ bool MediaDecoder::Close( )
 
 	audio_channels = 0;
 	audio_samplerate = 0;
-	audio_duration = std::chrono::microseconds::zero( );
+	audio_duration = 0us;
 
 	video_width = 0;
 	video_height = 0;
 	video_framerate = 0.0f;
-	video_duration = std::chrono::microseconds::zero( );
+	video_duration = 0us;
 
 	return true;
 }
@@ -209,9 +210,7 @@ void MediaDecoder::ClearQueue( )
 	while( it != queued_packets.end( ) )
 	{
 		AVPacket *temp = *it;
-		// TODO: Verify this is good (av_free_packet substituted with av_packet_unref)
-		av_packet_unref( temp );
-		av_free( temp );
+		av_packet_free( &temp );
 
 		++it;
 	}
@@ -265,8 +264,8 @@ float MediaDecoder::GetFrameRate( ) const
 
 static void CopyAudioFrame( SwrContext *swr, const AVFrame *frame, AudioFrame &audio_frame )
 {
-	int channels = frame->channels;
-	int nbsamples = frame->nb_samples;
+	int32_t channels = frame->channels;
+	int32_t nbsamples = frame->nb_samples;
 
 	audio_frame.data.resize( nbsamples * channels );
 
@@ -285,27 +284,26 @@ bool MediaDecoder::ReadAudio( AudioFrame &audio_frame )
 
 	AVFrame *frame = av_frame_alloc( );
 
-	int len = 0;
-	int done = 0;
-	AVPacket packet;
-	while( done == 0 && InternalRead( STREAMTYPE_AUDIO, &packet ) )
+	int32_t len = 0;
+	int32_t done = 0;
+	AVPacket *packet = nullptr;
+	while( done == 0 && ( packet = InternalRead( STREAMTYPE_AUDIO ) ) != nullptr )
 	{
-		uint8_t *data = packet.data;
-		int size = packet.size;
-		while( packet.size > 0 )
+		uint8_t *data = packet->data;
+		int32_t size = packet->size;
+		while( packet->size > 0 )
 		{
-			if( packet.pos == -1 )
+			if( packet->pos == -1 )
 			{
 				// packet is useless and so skip it
-				packet.size = 0;
+				packet->size = 0;
 			}
 			else
 			{
-				// TODO: Verify this is good (avcodec_decode_audio4 substituted with avcodec_send_packet and avcodec_receive_frame)
-				if( avcodec_send_packet( format_context->streams[packet.stream_index]->codec, &packet ) != 0 )
+				if( avcodec_send_packet( format_context->streams[packet->stream_index]->codec, packet ) != 0 )
 					break;
 
-				if( avcodec_receive_frame( format_context->streams[packet.stream_index]->codec, frame ) != 0 )
+				if( avcodec_receive_frame( format_context->streams[packet->stream_index]->codec, frame ) != 0 )
 					break;
 
 				len += frame->pkt_size;
@@ -315,15 +313,14 @@ bool MediaDecoder::ReadAudio( AudioFrame &audio_frame )
 
 				done += len;
 
-				packet.data += len;
-				packet.size -= len;
+				packet->data += len;
+				packet->size -= len;
 			}
 		}
 
-		packet.data = data;
-		packet.size = size;
-		// TODO: Verify this is good (av_free_packet substituted with av_packet_unref)
-		av_packet_unref( &packet );
+		packet->data = data;
+		packet->size = size;
+		av_packet_free( &packet );
 	}
 
 	if( done > 0 )
@@ -340,15 +337,15 @@ bool MediaDecoder::ReadAudio( AudioFrame &audio_frame )
 static void CopyVideoFrame( SwsContext *sws, const AVFrame *frame, VideoFrame &video_frame )
 {
 	AVPixelFormat format = static_cast<AVPixelFormat>( frame->format );
-	int planes = av_pix_fmt_count_planes( format );
-	int width = frame->width;
-	int height = frame->height;
+	int32_t planes = av_pix_fmt_count_planes( format );
+	int32_t width = frame->width;
+	int32_t height = frame->height;
 
 	video_frame.data.resize( width * height * planes );
 
 	uint8_t *data[] = { &video_frame.data[0] };
 
-	int strides[] = { planes * width, 0, 0, 0 };
+	int32_t strides[] = { planes * width, 0, 0, 0 };
 	sws_scale( sws, frame->extended_data, frame->linesize, 0, height, data, strides );
 
 	video_frame.width = width;
@@ -362,27 +359,26 @@ bool MediaDecoder::ReadVideo( VideoFrame &video_frame )
 
 	AVFrame *frame = av_frame_alloc( );
 
-	int len = 0;
-	int done = 0;
-	AVPacket packet;
-	while( done == 0 && InternalRead( STREAMTYPE_VIDEO, &packet ) )
+	int32_t len = 0;
+	int32_t done = 0;
+	AVPacket *packet = nullptr;
+	while( done == 0 && ( packet = InternalRead( STREAMTYPE_VIDEO ) ) != nullptr )
 	{
-		uint8_t *data = packet.data;
-		int size = packet.size;
-		while( packet.size > 0 )
+		uint8_t *data = packet->data;
+		int32_t size = packet->size;
+		while( packet->size > 0 )
 		{
-			if( packet.pos == -1 )
+			if( packet->pos == -1 )
 			{
 				// packet is useless and so skip it
-				packet.size = 0;
+				packet->size = 0;
 			}
 			else
 			{
-				// TODO: Verify this is good (avcodec_decode_video2 substituted with avcodec_send_packet and avcodec_receive_frame)
-				if( avcodec_send_packet( format_context->streams[packet.stream_index]->codec, &packet ) != 0 )
+				if( avcodec_send_packet( format_context->streams[packet->stream_index]->codec, packet ) != 0 )
 					break;
 
-				if( avcodec_receive_frame( format_context->streams[packet.stream_index]->codec, frame ) != 0 )
+				if( avcodec_receive_frame( format_context->streams[packet->stream_index]->codec, frame ) != 0 )
 					break;
 
 				len += frame->pkt_size;
@@ -392,15 +388,14 @@ bool MediaDecoder::ReadVideo( VideoFrame &video_frame )
 
 				done += len;
 
-				packet.data += len;
-				packet.size -= len;
+				packet->data += len;
+				packet->size -= len;
 			}
 		}
 
-		packet.data = data;
-		packet.size = size;
-		// TODO: Verify this is good (av_free_packet substituted with av_packet_unref)
-		av_packet_unref( &packet );
+		packet->data = data;
+		packet->size = size;
+		av_packet_free( &packet );
 	}
 
 	if( done > 0 )
@@ -480,7 +475,8 @@ bool MediaDecoder::InternalOpen( const std::string &filename )
 
 				audio_samplerate = codec_parameters->sample_rate;
 
-				audio_duration = std::chrono::microseconds( static_cast<int64_t>( stream->duration * av_q2d( time_base ) * 1000000 ) );
+				auto duration = std::chrono::seconds( static_cast<int64_t>( stream->duration * av_q2d( time_base ) ) );
+				audio_duration = std::chrono::duration_cast<std::chrono::microseconds>( duration );
 
 				uint64_t channel_layout = codec_parameters->channel_layout;
 				if( channel_layout == 0 )
@@ -488,8 +484,8 @@ bool MediaDecoder::InternalOpen( const std::string &filename )
 
 				swr_context = swr_alloc_set_opts( nullptr,
 					channel_layout, AV_SAMPLE_FMT_S16, codec_parameters->sample_rate,
-					channel_layout, (AVSampleFormat)codec_parameters->format, codec_parameters->sample_rate,
-					0, nullptr
+					channel_layout, static_cast<AVSampleFormat>( codec_parameters->format ),
+					codec_parameters->sample_rate, 0, nullptr
 				);
 
 				swr_init( swr_context );
@@ -500,7 +496,8 @@ bool MediaDecoder::InternalOpen( const std::string &filename )
 
 				video_height = codec_parameters->height;
 
-				video_duration = std::chrono::microseconds( static_cast<int64_t>( stream->duration * av_q2d( time_base ) * 1000000 ) );
+				auto duration = std::chrono::seconds( static_cast<int64_t>( stream->duration * av_q2d( time_base ) ) );
+				video_duration = std::chrono::duration_cast<std::chrono::microseconds>( duration );
 
 				if( stream->avg_frame_rate.num && stream->avg_frame_rate.den )
 					video_framerate = static_cast<float>( av_q2d( stream->avg_frame_rate ) );
@@ -508,7 +505,8 @@ bool MediaDecoder::InternalOpen( const std::string &filename )
 					video_framerate = 29.97f;
 
 				sws_context = sws_getContext( 
-					codec_parameters->width, codec_parameters->height, (AVPixelFormat)codec_parameters->format,
+					codec_parameters->width, codec_parameters->height,
+					static_cast<AVPixelFormat>( codec_parameters->format ),
 					codec_parameters->width, codec_parameters->height, AV_PIX_FMT_RGBA,
 					0, nullptr, nullptr, nullptr
 				);
@@ -544,57 +542,46 @@ bool MediaDecoder::InternalOpen( const std::string &filename )
 	return true;
 }
 
-bool MediaDecoder::InternalRead( StreamType type, AVPacket *packet )
+AVPacket *MediaDecoder::InternalRead( StreamType type )
 {
-	av_init_packet( packet );
-
 	AVMediaType codectype = static_cast<AVMediaType>( type );
 	AVStream **streams = format_context->streams;
-	std::vector<AVPacket *>::iterator it = queued_packets.begin( );
+	auto it = queued_packets.begin( );
 	while( it != queued_packets.end( ) )
 	{
 		AVPacket *temp = *it;
 		if( streams[temp->stream_index]->codecpar->codec_type == codectype )
 		{
-			*packet = *temp;
 			queued_packets.erase( it );
-			av_free( temp );
-			return true;
+			return temp;
 		}
 
 		++it;
 	}
 
-	AVPacket temp_packet;
-	av_init_packet( &temp_packet );
-	while( av_read_frame( format_context, &temp_packet ) >= 0 )
+	AVPacket *temp_packet = av_packet_alloc( );
+	while( av_read_frame( format_context, temp_packet ) >= 0 )
 	{
-		int index = temp_packet.stream_index;
+		int32_t index = temp_packet->stream_index;
 		AVMediaType mtype = streams[index]->codecpar->codec_type;
 		if( IsIgnoringStream( static_cast<StreamType>( mtype ) ) )
 		{
-			// TODO: Verify this is good (av_free_packet substituted with av_packet_unref)
-			av_packet_unref( &temp_packet );
+			av_packet_unref( temp_packet );
 			continue;
 		}
 
 		if( codectype == AVMEDIA_TYPE_UNKNOWN || mtype == codectype )
-		{
-			*packet = temp_packet;
-			return true;
-		}
+			return temp_packet;
 
-		AVPacket *storage = static_cast<AVPacket *>( av_malloc( sizeof( AVPacket ) ) );
-		av_copy_packet( storage, &temp_packet );
-		// TODO: Verify this is good (av_free_packet substituted with av_packet_unref)
-		av_packet_unref( &temp_packet );
-		queued_packets.push_back( storage );
+		queued_packets.push_back( temp_packet );
+		temp_packet = av_packet_alloc( );
 	}
 
-	return false;
+	av_packet_free( &temp_packet );
+	return nullptr;
 }
 
-int MediaDecoder::InternalMemoryRead( void *opaque, uint8_t *buf, int buf_size )
+int32_t MediaDecoder::InternalMemoryRead( void *opaque, uint8_t *buf, int32_t buf_size )
 {
 	MediaDecoder *decoder = static_cast<MediaDecoder *>( opaque );
 	if( decoder->decoding_mode == DECODEMODE_MEMORY )
@@ -605,17 +592,17 @@ int MediaDecoder::InternalMemoryRead( void *opaque, uint8_t *buf, int buf_size )
 			copy_size = remaining;
 		std::memcpy( buf, &decoder->memory_buffer[decoder->memory_pos], copy_size );
 		decoder->memory_pos += copy_size;
-		return static_cast<int>( copy_size );
+		return static_cast<int32_t>( copy_size );
 	}
 	else if( decoder->decoding_mode == DECODEMODE_STREAM )
 	{
-		return static_cast<int>( decoder->input_stream->Read( buf, buf_size ) );
+		return static_cast<int32_t>( decoder->input_stream->Read( buf, buf_size ) );
 	}
 
 	return -1;
 }
 
-int64_t MediaDecoder::InternalMemorySeek( void *opaque, int64_t offset, int whence )
+int64_t MediaDecoder::InternalMemorySeek( void *opaque, int64_t offset, int32_t whence )
 {
 	MediaDecoder *decoder = static_cast<MediaDecoder *>( opaque );
 	if( decoder->decoding_mode == DECODEMODE_MEMORY )

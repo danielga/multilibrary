@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #include <MultiLibrary/Common/ByteBuffer.hpp>
@@ -64,6 +63,8 @@
 #include <iostream>
 #include <thread>
 #include <iterator>
+
+using namespace std::chrono_literals;
 
 static void TestSockets( )
 {
@@ -144,7 +145,7 @@ static void TestAudio( )
 			sound.SetBuffer( buffer );
 			sound.Play( );
 
-			std::this_thread::sleep_for( std::chrono::milliseconds( 5000 ) );
+			std::this_thread::sleep_for( 5000ms );
 		}
 	}
 	catch( const std::exception &e )
@@ -267,7 +268,15 @@ static void ThreadFunction( std::reference_wrapper<ML::Window> win )
 
 static void TestWindow( )
 {
-	ML::Window window( "Tëst wíndow", ML::WindowSettings( ML::Monitor( true ), true, false, true, 0, 0, 1920, 1080, 8, 8, 8, 8, 24, 8, 0, 8, 2, 0 ) );
+	ML::WindowSettings settings;
+	settings.monitor = ML::Monitor( true );
+	settings.resizable = false;
+	settings.width = 1920;
+	settings.height = 1080;
+	settings.samples = 8;
+	settings.opengl_major = 2;
+
+	ML::Window window( "Tëst wíndow", settings );
 	window.SwapInterval( 60 );
 
 	std::thread thread( &ThreadFunction, std::ref( window ) );
@@ -287,17 +296,17 @@ static void TestProcess( )
 	process.CloseInput( );
 
 	while( process.GetStatus( ) != ML::Process::Status::Terminated )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+		std::this_thread::sleep_for( 10ms );
 
 	std::cout << "Exit code: " << process.ExitCode( );
 }
 
 int main( int, char ** )
 {
-	TestSockets( );
+	//TestSockets( );
 	//TestStrings( );
 	//TestFilesystem( );
-	//TestAudio( );
+	TestAudio( );
 	//TestWindow( );
 	//TestProcess( );
 	return 0;

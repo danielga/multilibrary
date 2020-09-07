@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #include <MultiLibrary/Media/SoundBuffer.hpp>
@@ -154,7 +153,9 @@ bool SoundBuffer::Initialize( MediaDecoder &file )
 
 	// This allocates a pretty close amount of memory to
 	// the one required for all the samples in the file
-	samples_buffer.reserve( static_cast<size_t>( duration.count( ) / 1000000.0 * samplerate * channel_count ) );
+	samples_buffer.reserve( static_cast<size_t>(
+		duration.count( ) / ( 1000000.0 * samplerate * channel_count )
+	) );
 
 	AudioFrame frame;
 	while( file.ReadAudio( frame ) )
@@ -169,7 +170,7 @@ bool SoundBuffer::Initialize( MediaDecoder &file )
 
 bool SoundBuffer::Update( uint32_t channels, uint32_t samplerate )
 {
-	if( !channels || !samplerate || samples_buffer.empty( ) )
+	if( channels == 0 || samplerate == 0 || samples_buffer.empty( ) )
 		return false;
 
 	ALenum format = AudioDevice::GetFormatFromChannelCount( channels );
@@ -179,7 +180,9 @@ bool SoundBuffer::Update( uint32_t channels, uint32_t samplerate )
 	ALsizei bytes_count = static_cast<ALsizei>( samples_buffer.size( ) * sizeof( int16_t ) );
 	alCheck( alBufferData( buffer_id, format, &samples_buffer[0], bytes_count, samplerate ) );
 
-	buffer_duration = std::chrono::microseconds( static_cast<int64_t>( samples_buffer.size( ) * 1000000.0 / samplerate / channels ) );
+	buffer_duration = std::chrono::microseconds( static_cast<int64_t>(
+		samples_buffer.size( ) * ( 1000000.0 / samplerate / channels )
+	) );
 
 	std::vector<int16_t>( ).swap( samples_buffer );
 

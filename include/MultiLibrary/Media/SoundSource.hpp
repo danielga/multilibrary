@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #pragma once
@@ -42,7 +41,7 @@
 namespace MultiLibrary
 {
 
-const unsigned char MAX_BUFFERS = 2;
+const uint8_t MAX_BUFFERS = 2;
 
 enum SoundStatus
 {
@@ -78,7 +77,7 @@ public:
 	SoundStatus GetStatus( ) const;
 
 protected:
-	unsigned int audio_source;
+	uint32_t audio_source;
 };
 
 } // namespace MultiLibrary

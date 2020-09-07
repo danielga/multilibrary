@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #pragma once
@@ -112,10 +111,10 @@ public:
 
 private:
 	bool InternalOpen( const std::string &filename = "dummy" );
-	bool InternalRead( StreamType type, AVPacket *packet );
+	AVPacket *InternalRead( StreamType type );
 
-	static int InternalMemoryRead( void *opaque, uint8_t *buf, int buf_size );
-	static int64_t InternalMemorySeek( void *opaque, int64_t offset, int whence );
+	static int32_t InternalMemoryRead( void *opaque, uint8_t *buf, int32_t buf_size );
+	static int64_t InternalMemorySeek( void *opaque, int64_t offset, int32_t whence );
 
 	enum DecodeMode
 	{

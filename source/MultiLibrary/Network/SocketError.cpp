@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #include <MultiLibrary/Network/SocketError.hpp>
@@ -43,16 +42,16 @@ SocketError::SocketError( ) :
 	error_value( 0 )
 { }
 
-SocketError::SocketError( int error ) :
+SocketError::SocketError( int32_t error ) :
 	error_value( error )
 { }
 
-void SocketError::Set( int error )
+void SocketError::Set( int32_t error )
 {
 	error_value = error;
 }
 
-int SocketError::Get( ) const
+int32_t SocketError::Get( ) const
 {
 	return error_value;
 }

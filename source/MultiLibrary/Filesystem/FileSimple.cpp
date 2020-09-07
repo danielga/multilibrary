@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #include <MultiLibrary/Filesystem/Filesystem.hpp>
@@ -122,13 +121,13 @@ size_t FileSimple::Read( void *data, size_t size )
 	return fread( data, 1, size, static_cast<FILE *>( file_pointer ) );
 }
 
-int FileSimple::Scan( const char *format, ... )
+int32_t FileSimple::Scan( const char *format, ... )
 {
 	assert( format != nullptr );
 
 	va_list args;
 	va_start( args, format );
-	int num = vfscanf( static_cast<FILE *>( file_pointer ), format, args );
+	int32_t num = vfscanf( static_cast<FILE *>( file_pointer ), format, args );
 	va_end( args );
 	return num;
 }
@@ -140,13 +139,13 @@ size_t FileSimple::Write( const void *data, size_t size )
 	return fwrite( data, 1, size, static_cast<FILE *>( file_pointer ) );
 }
 
-int FileSimple::Print( const char *format, ... )
+int32_t FileSimple::Print( const char *format, ... )
 {
 	assert( format != nullptr );
 
 	va_list args;
 	va_start( args, format );
-	int num = vfprintf( static_cast<FILE *>( file_pointer ), format, args );
+	int32_t num = vfprintf( static_cast<FILE *>( file_pointer ), format, args );
 	va_end( args );
 	return num;
 }

@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #pragma once
@@ -60,9 +59,9 @@ public:
 	virtual bool EndOfFile( ) const = 0;
 
 	virtual size_t Read( void *data, size_t size ) = 0;
-	virtual int Scan( const char *format, ... ) = 0;
+	virtual int32_t Scan( const char *format, ... ) = 0;
 	virtual size_t Write( const void *data, size_t size ) = 0;
-	virtual int Print( const char *format, ... ) = 0;
+	virtual int32_t Print( const char *format, ... ) = 0;
 };
 
 } // namespace MultiLibrary

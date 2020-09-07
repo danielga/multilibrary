@@ -1,8 +1,8 @@
 /*************************************************************************
- * MultiLibrary - http://danielga.github.io/multilibrary/
+ * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2017, Daniel Almeida
+ * Copyright (c) 2014-2020, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *************************************************************************/
 
 #include <MultiLibrary/Common/String.hpp>
@@ -99,16 +98,16 @@ std::string String::ToUTF8( ) const
 	return utf8_string;
 }
 
-std::basic_string<uint16_t> String::ToUTF16( ) const
+std::u16string String::ToUTF16( ) const
 {
-	std::basic_string<uint16_t> str;
+	std::u16string str;
 	UTF8::ToUTF16( utf8_string.begin( ), utf8_string.end( ), std::back_inserter( str ) );
 	return str;
 }
 
-std::basic_string<uint32_t> String::ToUTF32( ) const
+std::u32string String::ToUTF32( ) const
 {
-	std::basic_string<uint32_t> str;
+	std::u32string str;
 	UTF8::ToUTF32( utf8_string.begin( ), utf8_string.end( ), std::back_inserter( str ) );
 	return str;
 }
@@ -124,6 +123,7 @@ String::operator std::wstring( ) const
 }
 
 // Written by Jack Handy - jakkhandy@hotmail.com
+// https://www.codeproject.com/Articles/1088/Wildcard-string-compare-globbing
 // Adapted for C++ (MultiLibrary)
 bool String::WildcardCompare( const std::string &str, const std::string &wildcard )
 {
