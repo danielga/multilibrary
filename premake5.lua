@@ -1,3 +1,7 @@
+if not _ACTION then
+	error("no action defined")
+end
+
 newoption({
 	trigger = "static-runtime",
 	description = "Force the use of the static C runtime (only works with static builds)"
@@ -21,22 +25,18 @@ newoption({
 	description = "Sets the path of third-party libraries relative to the current system projects directory (\"thirdparty\" would use \"projects/windows/thirdparty\", for example, on Windows)."
 })
 
-if not _ACTION then
-	error("no action defined")
-end
-
-SOURCE_DIRECTORY = "../source"
-INCLUDE_DIRECTORY = "../include"
-THIRDPARTY_DIRECTORY = os.target() .. "/" .. (_OPTIONS["thirdparty-directory"] or "thirdparty")
-PROJECT_DIRECTORY = os.target() .. "/" .. _ACTION
+SOURCE_DIRECTORY = "source"
+INCLUDE_DIRECTORY = "include"
+THIRDPARTY_DIRECTORY = "projects/" .. os.target() .. "/" .. (_OPTIONS["thirdparty-directory"] or "thirdparty")
+PROJECT_DIRECTORY = "projects/" .. os.target() .. "/" .. _ACTION
 
 if _ACTION == "clean" then
 	local rmfmt = "rmdir /s /q \"" .. _MAIN_SCRIPT_DIR .. "/%s\""
-	if not os.is("windows") then
+	if not os.ishost("windows") then
 		rmfmt = "rm -rf \"" .. _MAIN_SCRIPT_DIR .. "/%s\""
 	end
 
-	local dirs = os.matchdirs(os.target() .. "/*")
+	local dirs = os.matchdirs("projects/" .. os.target() .. "/*")
 	for _, dir in pairs(dirs) do
 		if dir ~= THIRDPARTY_DIRECTORY then
 			os.outputof(rmfmt:format(dir))

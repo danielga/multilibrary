@@ -43,11 +43,11 @@ namespace MultiLibrary
 /*!
  \brief Values that represent the type of seeking pretended.
  */
-enum SeekMode
+enum class SeekMode
 {
-	SEEKMODE_SET, ///< Seeking is absolute
-	SEEKMODE_CUR, ///< Seeking is relative to the current position
-	SEEKMODE_END ///< Seeking is relative to the end of the file/buffer
+	Set, ///< Seeking is absolute
+	Cur, ///< Seeking is relative to the current position
+	End ///< Seeking is relative to the end of the file/buffer
 };
 
 /*!

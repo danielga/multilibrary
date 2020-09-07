@@ -107,7 +107,7 @@ size_t File::Size( ) const
 bool File::Seek( size_t pos )
 {
 	if( file_internal )
-		return file_internal->Seek( pos, SEEKMODE_SET );
+		return file_internal->Seek( pos, SeekMode::Set );
 
 	return false;
 }
@@ -171,12 +171,12 @@ InputStream &File::operator>>( bool &data )
 		}
 		else if( strncmp( value, "true", 4 ) == 0 )
 		{
-			Seek( -1, SEEKMODE_CUR );
+			Seek( -1, SeekMode::Cur );
 			data = true;
 		}
 		else
 		{
-			Seek( -5, SEEKMODE_CUR );
+			Seek( -5, SeekMode::Cur );
 		}
 	}
 

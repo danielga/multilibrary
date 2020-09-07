@@ -36,6 +36,14 @@
 #include <MultiLibrary/Media/MediaDecoder.hpp>
 #include <MultiLibrary/Common/InputStream.hpp>
 #include <cstring>
+
+#ifdef _WIN32
+
+#pragma warning( push )
+#pragma warning( disable : 4244 )
+
+#endif
+
 extern "C"
 {
 	#include <libavformat/avformat.h>
@@ -45,6 +53,12 @@ extern "C"
 	#include <libavutil/channel_layout.h>
 }
 
+#ifdef _WIN32
+
+#pragma warning( pop )
+
+#endif
+
 using namespace std::chrono_literals;
 
 namespace MultiLibrary
@@ -52,7 +66,7 @@ namespace MultiLibrary
 
 MediaDecoder::MediaDecoder( ) :
 	format_context( nullptr ),
-	decoding_mode( DECODEMODE_NONE ),
+	decoding_mode( DecodeMode::None ),
 	memory_buffer( nullptr ),
 	memory_size( 0 ),
 	memory_pos( 0 ),
@@ -68,10 +82,15 @@ MediaDecoder::MediaDecoder( ) :
 	swr_context( nullptr ),
 	sws_context( nullptr )
 {
-	for( int32_t k = 0; k < STREAMTYPE_COUNT; ++k )
+	for( int32_t k = 0; k < static_cast<int32_t>( StreamType::Count ); ++k )
 		ignored_streams[k] = false;
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
+
 	av_register_all( );
+
+#endif
+
 }
 
 MediaDecoder::~MediaDecoder( )
@@ -84,7 +103,7 @@ bool MediaDecoder::Open( const std::string &filename )
 	if( IsOpen( ) )
 		return false;
 
-	decoding_mode = DECODEMODE_FILE;
+	decoding_mode = DecodeMode::File;
 	return InternalOpen( filename );
 }
 
@@ -93,7 +112,7 @@ bool MediaDecoder::Open( const void *buffer, size_t size )
 	if( IsOpen( ) )
 		return false;
 
-	decoding_mode = DECODEMODE_MEMORY;
+	decoding_mode = DecodeMode::Memory;
 	memory_buffer = static_cast<const uint8_t *>( buffer );
 	memory_size = size;
 	memory_pos = 0;
@@ -121,7 +140,7 @@ bool MediaDecoder::Open( InputStream &in_stream )
 	if( IsOpen( ) )
 		return false;
 
-	decoding_mode = DECODEMODE_STREAM;
+	decoding_mode = DecodeMode::Stream;
 
 	input_stream = &in_stream;
 
@@ -155,12 +174,13 @@ bool MediaDecoder::Close( )
 
 	ClearQueue( );
 
-	for( uint32_t i = 0; i < format_context->nb_streams; i++ )
+	for( AVCodecContext *codec_context : stream_codecs )
 	{
-		AVCodecContext *codec_context = format_context->streams[i]->codec;
 		if( codec_context != nullptr && codec_context->codec != nullptr )
-			avcodec_close( codec_context );
+			avcodec_free_context( &codec_context );
 	}
+
+	stream_codecs.clear( );
 
 	if( swr_context != nullptr )
 		swr_free( &swr_context );
@@ -171,11 +191,11 @@ bool MediaDecoder::Close( )
 		sws_context = nullptr;
 	}
 
-	if( decoding_mode == DECODEMODE_FILE )
+	if( decoding_mode == DecodeMode::File )
 	{
 		avformat_close_input( &format_context );
 	}
-	else if( decoding_mode != DECODEMODE_NONE )
+	else if( decoding_mode != DecodeMode::None )
 	{
 		av_free( format_context->pb );
 		format_context->pb = nullptr;
@@ -187,7 +207,7 @@ bool MediaDecoder::Close( )
 	if( input_stream != nullptr )
 		input_stream = nullptr;
 
-	decoding_mode = DECODEMODE_NONE;
+	decoding_mode = DecodeMode::None;
 	memory_buffer = nullptr;
 	memory_size = 0;
 	memory_pos = 0;
@@ -287,7 +307,7 @@ bool MediaDecoder::ReadAudio( AudioFrame &audio_frame )
 	int32_t len = 0;
 	int32_t done = 0;
 	AVPacket *packet = nullptr;
-	while( done == 0 && ( packet = InternalRead( STREAMTYPE_AUDIO ) ) != nullptr )
+	while( done == 0 && ( packet = InternalRead( StreamType::Audio ) ) != nullptr )
 	{
 		uint8_t *data = packet->data;
 		int32_t size = packet->size;
@@ -300,10 +320,10 @@ bool MediaDecoder::ReadAudio( AudioFrame &audio_frame )
 			}
 			else
 			{
-				if( avcodec_send_packet( format_context->streams[packet->stream_index]->codec, packet ) != 0 )
+				if( avcodec_send_packet( stream_codecs[packet->stream_index], packet ) != 0 )
 					break;
 
-				if( avcodec_receive_frame( format_context->streams[packet->stream_index]->codec, frame ) != 0 )
+				if( avcodec_receive_frame( stream_codecs[packet->stream_index], frame ) != 0 )
 					break;
 
 				len += frame->pkt_size;
@@ -336,7 +356,22 @@ bool MediaDecoder::ReadAudio( AudioFrame &audio_frame )
 
 static void CopyVideoFrame( SwsContext *sws, const AVFrame *frame, VideoFrame &video_frame )
 {
+
+#ifdef _WIN32
+
+#pragma warning( push )
+#pragma warning( disable : 26812 )
+
+#endif
+
 	AVPixelFormat format = static_cast<AVPixelFormat>( frame->format );
+
+#ifdef _WIN32
+
+#pragma warning( pop )
+
+#endif
+
 	int32_t planes = av_pix_fmt_count_planes( format );
 	int32_t width = frame->width;
 	int32_t height = frame->height;
@@ -362,7 +397,7 @@ bool MediaDecoder::ReadVideo( VideoFrame &video_frame )
 	int32_t len = 0;
 	int32_t done = 0;
 	AVPacket *packet = nullptr;
-	while( done == 0 && ( packet = InternalRead( STREAMTYPE_VIDEO ) ) != nullptr )
+	while( done == 0 && ( packet = InternalRead( StreamType::Video ) ) != nullptr )
 	{
 		uint8_t *data = packet->data;
 		int32_t size = packet->size;
@@ -375,10 +410,10 @@ bool MediaDecoder::ReadVideo( VideoFrame &video_frame )
 			}
 			else
 			{
-				if( avcodec_send_packet( format_context->streams[packet->stream_index]->codec, packet ) != 0 )
+				if( avcodec_send_packet( stream_codecs[packet->stream_index], packet ) != 0 )
 					break;
 
-				if( avcodec_receive_frame( format_context->streams[packet->stream_index]->codec, frame ) != 0 )
+				if( avcodec_receive_frame( stream_codecs[packet->stream_index], frame ) != 0 )
 					break;
 
 				len += frame->pkt_size;
@@ -427,14 +462,14 @@ int64_t MediaDecoder::GetPosition( )
 
 void MediaDecoder::IgnoreStream( StreamType stream_type, bool ignore )
 {
-	if( stream_type >= 0 && stream_type < STREAMTYPE_COUNT )
-		ignored_streams[stream_type] = ignore;
+	if( stream_type >= StreamType::Video && stream_type < StreamType::Count )
+		ignored_streams[static_cast<size_t>( stream_type )] = ignore;
 }
 
 bool MediaDecoder::IsIgnoringStream( StreamType stream_type )
 {
-	if( stream_type >= 0 && stream_type < STREAMTYPE_COUNT )
-		return ignored_streams[stream_type];
+	if( stream_type >= StreamType::Video && stream_type < StreamType::Count )
+		return ignored_streams[static_cast<size_t>( stream_type )];
 
 	return true;
 }
@@ -454,19 +489,42 @@ bool MediaDecoder::InternalOpen( const std::string &filename )
 		return false;
 	}
 
-	for( uint32_t i = 0; i < format_context->nb_streams; i++ )
+	stream_codecs.resize( format_context->nb_streams );
+	for( uint32_t i = 0; i < format_context->nb_streams; ++i )
 	{
 		AVStream *stream = format_context->streams[i];
 		AVCodecParameters *codec_parameters = stream->codecpar;
+
+#ifdef _WIN32
+
+#pragma warning( push )
+#pragma warning( disable : 26812 )
+
+#endif
+
 		AVMediaType media_type = codec_parameters->codec_type;
+
+#ifdef _WIN32
+
+#pragma warning( pop )
+
+#endif
+
 		if( media_type == AVMEDIA_TYPE_AUDIO || media_type == AVMEDIA_TYPE_VIDEO )
 		{
 			AVCodec *codec = avcodec_find_decoder( codec_parameters->codec_id );
-			if( codec == 0 )
+			if( codec == nullptr )
 				continue;
 
-			if( avcodec_open2( stream->codec, codec, 0 ) < 0 )
+			stream_codecs[i] = avcodec_alloc_context3( codec );
+			if( stream_codecs[i] == nullptr )
 				continue;
+
+			if( avcodec_open2( stream_codecs[i], codec, nullptr ) < 0 )
+			{
+				avcodec_free_context( &stream_codecs[i] );
+				continue;
+			}
 
 			AVRational &time_base = stream->time_base;
 			if( media_type == AVMEDIA_TYPE_AUDIO )
@@ -584,7 +642,7 @@ AVPacket *MediaDecoder::InternalRead( StreamType type )
 int32_t MediaDecoder::InternalMemoryRead( void *opaque, uint8_t *buf, int32_t buf_size )
 {
 	MediaDecoder *decoder = static_cast<MediaDecoder *>( opaque );
-	if( decoder->decoding_mode == DECODEMODE_MEMORY )
+	if( decoder->decoding_mode == DecodeMode::Memory )
 	{
 		size_t remaining = static_cast<size_t>( decoder->memory_size - decoder->memory_pos );
 		size_t copy_size = static_cast<size_t>( buf_size );
@@ -594,7 +652,7 @@ int32_t MediaDecoder::InternalMemoryRead( void *opaque, uint8_t *buf, int32_t bu
 		decoder->memory_pos += copy_size;
 		return static_cast<int32_t>( copy_size );
 	}
-	else if( decoder->decoding_mode == DECODEMODE_STREAM )
+	else if( decoder->decoding_mode == DecodeMode::Stream )
 	{
 		return static_cast<int32_t>( decoder->input_stream->Read( buf, buf_size ) );
 	}
@@ -605,7 +663,7 @@ int32_t MediaDecoder::InternalMemoryRead( void *opaque, uint8_t *buf, int32_t bu
 int64_t MediaDecoder::InternalMemorySeek( void *opaque, int64_t offset, int32_t whence )
 {
 	MediaDecoder *decoder = static_cast<MediaDecoder *>( opaque );
-	if( decoder->decoding_mode == DECODEMODE_MEMORY )
+	if( decoder->decoding_mode == DecodeMode::Memory )
 	{
 		switch( whence )
 		{
@@ -622,7 +680,7 @@ int64_t MediaDecoder::InternalMemorySeek( void *opaque, int64_t offset, int32_t 
 			return decoder->memory_size;
 		}
 	}
-	else if( decoder->decoding_mode == DECODEMODE_STREAM )
+	else if( decoder->decoding_mode == DecodeMode::Stream )
 	{
 		InputStream *stream = decoder->input_stream;
 		if( whence == AVSEEK_SIZE )

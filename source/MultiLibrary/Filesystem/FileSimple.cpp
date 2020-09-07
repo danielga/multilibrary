@@ -96,7 +96,7 @@ int64_t FileSimple::Size( ) const
 
 bool FileSimple::Seek( int64_t pos, SeekMode mode )
 {
-	return fseeko64( static_cast<FILE *>( file_pointer ), pos, mode ) == 0;
+	return fseeko64( static_cast<FILE *>( file_pointer ), pos, static_cast<int32_t>( mode ) ) == 0;
 }
 
 bool FileSimple::Flush( )

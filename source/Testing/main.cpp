@@ -140,7 +140,8 @@ static void TestAudio( )
 		ML::Sound sound;
 		{
 			ML::SoundBuffer buffer;
-			buffer.Load( "some_music.mp3" );
+			if( !buffer.Load( "some_music.mp3" ) )
+				throw std::runtime_error( "failed to load some_music.mp3" );
 
 			sound.SetBuffer( buffer );
 			sound.Play( );
@@ -303,6 +304,13 @@ static void TestProcess( )
 
 int main( int, char ** )
 {
+	(void)&TestSockets;
+	(void)&TestStrings;
+	(void)&TestFilesystem;
+	(void)&TestAudio;
+	(void)&TestWindow;
+	(void)&TestProcess;
+
 	//TestSockets( );
 	//TestStrings( );
 	//TestFilesystem( );
