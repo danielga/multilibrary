@@ -95,7 +95,7 @@ public:
 		{
 			data[offset] = ch;
 
-			if( ch == '\0' )
+			if( ch == '\0' || ch == '\n' )
 				return *this;
 
 			++offset;
@@ -137,7 +137,7 @@ public:
 		{
 			data[offset] = ch;
 
-			if( ch == L'\0' )
+			if( ch == L'\0' || ch == L'\n' )
 				return *this;
 
 			++offset;

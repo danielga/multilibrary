@@ -64,7 +64,7 @@ enum class Output
 /*!
  \brief A class that wraps the operating system's pipe functionality.
  */
-class MULTILIBRARY_COMMON_API Pipe : public IOStream, public NonCopyable
+class MULTILIBRARY_COMMON_API Pipe : public IOStream, public NonCopyable, public std::iostream
 {
 public:
 	Pipe( Standard::Input in, Standard::Output out );
@@ -76,6 +76,8 @@ public:
 	 \param write_inheritable Should the write handle be inheritable
 	 */
 	Pipe( bool read_inheritable, bool write_inheritable );
+
+	Pipe( Pipe &&pipe ) noexcept;
 
 	/*!
 	 \brief Destructor.

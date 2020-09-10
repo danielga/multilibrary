@@ -40,18 +40,62 @@ namespace MultiLibrary
 
 InputStream &InputStream::operator>>( std::string &data )
 {
-	char ch = '\0';
-	while( Read( &ch, sizeof( ch ) ) == sizeof( ch ) && ch != '\0' )
+	char ch = '\0', nch = '\0';
+	if( Read( &ch, sizeof( ch ) ) != sizeof( ch ) || ch == '\0' || ch == '\n' )
+		return *this;
+
+	do
+	{
+		if( Read( &nch, sizeof( nch ) ) != sizeof( nch ) || nch == '\0' || nch == '\n' )
+		{
+
+#ifdef _WIN32
+
+			if( ch == '\r' )
+				break;
+
+#endif
+
+			data += ch;
+			break;
+		}
+
 		data += ch;
+
+		ch = nch;
+	}
+	while( ch != '\0' && ch != '\n' );
 
 	return *this;
 }
 
 InputStream &InputStream::operator>>( std::wstring &data )
 {
-	wchar_t ch = L'\0';
-	while( Read( &ch, sizeof( ch ) ) == sizeof( ch ) && ch != L'\0' )
+	wchar_t ch = L'\0', nch = L'\0';
+	if( Read( &ch, sizeof( ch ) ) != sizeof( ch ) || ch == L'\0' || ch == L'\n' )
+		return *this;
+
+	do
+	{
+		if( Read( &nch, sizeof( nch ) ) != sizeof( nch ) || nch == L'\0' || nch == L'\n' )
+		{
+
+#ifdef _WIN32
+
+			if( ch == L'\r' )
+				break;
+
+#endif
+
+			data += ch;
+			break;
+		}
+
 		data += ch;
+
+		ch = nch;
+	}
+	while( ch != L'\0' && ch != L'\n' );
 
 	return *this;
 }

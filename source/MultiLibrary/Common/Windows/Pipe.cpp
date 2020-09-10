@@ -145,6 +145,11 @@ Pipe::Pipe( bool read_inheritable, bool write_inheritable )
 	write_handle.reset( new Handle( write ) );
 }
 
+Pipe::Pipe( Pipe &&pipe ) noexcept :
+	read_handle( std::move( pipe.read_handle ) ),
+	write_handle( std::move( pipe.write_handle ) )
+{ }
+
 Pipe::~Pipe( )
 {
 	CloseRead( );

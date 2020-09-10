@@ -63,6 +63,7 @@
 #include <iostream>
 #include <thread>
 #include <iterator>
+#include <string>
 
 using namespace std::chrono_literals;
 
@@ -293,11 +294,23 @@ static void TestProcess( )
 	ML::Process process( "Child.exe" );
 
 	ML::Pipe &input = process.Input( );
-	input << "nope\n" << "nein\n" << "nyet\n" << "nada\n" << static_cast<int32_t>( 56 ) << true;
+	const std::string instr1 = "nope", instr2 = "nein", instr3 = "nyet", instr4 = "nada";
+	const int32_t innum1 = 56;
+	const bool inbool1 = true;
+	input << instr1 << instr2 << instr3 << instr4 << innum1 << true;
 	process.CloseInput( );
 
 	while( process.GetStatus( ) != ML::Process::Status::Terminated )
 		std::this_thread::sleep_for( 10ms );
+
+	ML::Pipe &output = process.Output( );
+	std::string outstr1, outstr2, outstr3, outstr4;
+	int32_t outnum1 = 0;
+	bool outbool1 = false;
+	output >> outstr1 >> outstr2 >> outstr3 >> outstr4 >> outnum1 >> outbool1;
+
+	if( outstr1 != instr4 || outstr2 != instr3 || outstr3 != instr2 || outstr4 != instr1 || outnum1 != innum1 || outbool1 != inbool1 )
+		throw std::runtime_error( "TestProcess failed" );
 
 	std::cout << "Exit code: " << process.ExitCode( );
 }
@@ -314,8 +327,8 @@ int main( int, char ** )
 	//TestSockets( );
 	//TestStrings( );
 	//TestFilesystem( );
-	TestAudio( );
+	//TestAudio( );
 	//TestWindow( );
-	//TestProcess( );
+	TestProcess( );
 	return 0;
 }

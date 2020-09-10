@@ -37,6 +37,8 @@
 
 #include <MultiLibrary/Common/Export.hpp>
 
+#include <iostream>
+
 namespace MultiLibrary
 {
 
@@ -53,7 +55,7 @@ enum class SeekMode
 /*!
  \brief An abstract class for objects that can act as data streams.
  */
-class MULTILIBRARY_COMMON_API Stream
+class MULTILIBRARY_COMMON_API Stream : public std::streambuf
 {
 public:
 	virtual bool IsValid( ) const = 0;
