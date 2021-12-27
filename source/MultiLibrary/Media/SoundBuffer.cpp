@@ -152,7 +152,9 @@ bool SoundBuffer::Initialize( MediaDecoder &file )
 
 	// This allocates a pretty close amount of memory to
 	// the one required for all the samples in the file
-	samples_buffer.reserve( static_cast<size_t>( duration.count( ) / 1000000.0 * samplerate * channel_count ) );
+	samples_buffer.reserve( static_cast<size_t>(
+		duration.count( ) / ( 1000000.0 * samplerate * channel_count )
+	) );
 
 	AudioFrame frame;
 	while( file.ReadAudio( frame ) )
@@ -167,7 +169,7 @@ bool SoundBuffer::Initialize( MediaDecoder &file )
 
 bool SoundBuffer::Update( uint32_t channels, uint32_t samplerate )
 {
-	if( !channels || !samplerate || samples_buffer.empty( ) )
+	if( channels == 0 || samplerate == 0 || samples_buffer.empty( ) )
 		return false;
 
 	ALenum format = AudioDevice::GetFormatFromChannelCount( channels );
@@ -177,7 +179,9 @@ bool SoundBuffer::Update( uint32_t channels, uint32_t samplerate )
 	ALsizei bytes_count = static_cast<ALsizei>( samples_buffer.size( ) * sizeof( int16_t ) );
 	alCheck( alBufferData( buffer_id, format, &samples_buffer[0], bytes_count, samplerate ) );
 
-	buffer_duration = std::chrono::microseconds( static_cast<int64_t>( samples_buffer.size( ) * 1000000.0 / samplerate / channels ) );
+	buffer_duration = std::chrono::microseconds( static_cast<int64_t>(
+		samples_buffer.size( ) * ( 1000000.0 / samplerate / channels )
+	) );
 
 	std::vector<int16_t>( ).swap( samples_buffer );
 

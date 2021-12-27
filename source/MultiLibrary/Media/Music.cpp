@@ -40,7 +40,7 @@ namespace MultiLibrary
 
 Music::Music( )
 {
-	media_decoder.IgnoreStream( MediaDecoder::STREAMTYPE_VIDEO, true );
+	media_decoder.IgnoreStream( MediaDecoder::StreamType::Video, true );
 }
 
 Music::~Music( )

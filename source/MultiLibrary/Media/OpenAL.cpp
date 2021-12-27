@@ -44,7 +44,7 @@ namespace MultiLibrary
 namespace Internal
 {
 
-void alCheckError( const std::string &file, unsigned int line )
+void alCheckError( const std::string &file, uint32_t line )
 {
 	ALenum errorCode = alGetError( );
 	if( errorCode != AL_NO_ERROR )

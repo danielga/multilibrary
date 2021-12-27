@@ -70,7 +70,7 @@ void Sound::SetBuffer( SoundBuffer &soundbuffer )
 	alCheck( alSourcei( audio_source, AL_BUFFER, soundbuffer.GetBufferIndex( ) ) );
 }
 
-const SoundBuffer &Sound::GetBuffer( )
+const SoundBuffer &Sound::GetBuffer( ) const
 {
 	return *sound_buffer;
 }

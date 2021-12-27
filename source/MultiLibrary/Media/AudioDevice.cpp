@@ -125,7 +125,7 @@ std::vector<std::string> AudioDevice::GetAudioDevices( )
 	return devicesList;
 }
 
-int AudioDevice::GetFormatFromChannelCount( uint32_t numChannels )
+int32_t AudioDevice::GetFormatFromChannelCount( uint32_t numChannels )
 {
 	switch( numChannels )
 	{

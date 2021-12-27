@@ -55,7 +55,7 @@ public:
 	void Stop( );
 
 	void SetBuffer( SoundBuffer &soundbuffer );
-	const SoundBuffer &GetBuffer( );
+	const SoundBuffer &GetBuffer( ) const;
 
 	void SetLoop( bool loop );
 	bool GetLoop( );

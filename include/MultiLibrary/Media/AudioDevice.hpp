@@ -39,8 +39,8 @@
 #include <string>
 #include <vector>
 
-typedef struct ALCdevice_struct ALCdevice;
-typedef struct ALCcontext_struct ALCcontext;
+typedef struct ALCdevice ALCdevice;
+typedef struct ALCcontext ALCcontext;
 
 namespace MultiLibrary
 {
@@ -59,7 +59,7 @@ public:
 	void MakeCurrent( );
 
 	static std::vector<std::string> GetAudioDevices( );
-	static int GetFormatFromChannelCount( uint32_t numChannels );
+	static int32_t GetFormatFromChannelCount( uint32_t numChannels );
 
 private:
 	ALCdevice *openal_device;

@@ -41,7 +41,7 @@
 namespace MultiLibrary
 {
 
-const unsigned char MAX_BUFFERS = 2;
+const uint8_t MAX_BUFFERS = 2;
 
 enum SoundStatus
 {
@@ -77,7 +77,7 @@ public:
 	SoundStatus GetStatus( ) const;
 
 protected:
-	unsigned int audio_source;
+	uint32_t audio_source;
 };
 
 } // namespace MultiLibrary

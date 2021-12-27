@@ -72,9 +72,9 @@ private:
 	bool Initialize( MediaDecoder &file );
 	bool Update( uint32_t channels, uint32_t samplerate );
 
-	std::vector<short> samples_buffer;
-	uint32_t buffer_id;
-	std::chrono::microseconds buffer_duration;
+	std::vector<int16_t> samples_buffer;
+	uint32_t buffer_id = 0;
+	std::chrono::microseconds buffer_duration = std::chrono::microseconds::zero( );
 };
 
 } // namespace MultiLibrary

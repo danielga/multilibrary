@@ -84,12 +84,12 @@ void SoundStream::Stop( )
 	is_streaming = false;
 }
 
-unsigned int SoundStream::GetChannelCount( ) const
+uint32_t SoundStream::GetChannelCount( ) const
 {
 	return channel_count;
 }
 
-unsigned int SoundStream::GetSampleRate( ) const
+uint32_t SoundStream::GetSampleRate( ) const
 {
 	return sample_rate;
 }

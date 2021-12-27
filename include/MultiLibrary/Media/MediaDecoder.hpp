@@ -46,6 +46,7 @@ struct AVFormatContext;
 struct AVPacket;
 struct SwrContext;
 struct SwsContext;
+struct AVCodecContext;
 
 namespace MultiLibrary
 {
@@ -53,8 +54,8 @@ namespace MultiLibrary
 struct AudioFrame
 {
 	std::vector<int16_t> data; // Packed 16 bit samples
-	uint32_t samplerate;
-	uint32_t channels;
+	uint32_t samplerate = 0;
+	uint32_t channels = 0;
 };
 
 struct VideoFrame
@@ -67,12 +68,12 @@ struct VideoFrame
 class MULTILIBRARY_MEDIA_API MediaDecoder : public NonCopyable
 {
 public:
-	enum StreamType
+	enum class StreamType
 	{
-		STREAMTYPE_VIDEO,
-		STREAMTYPE_AUDIO,
+		Video,
+		Audio,
 
-		STREAMTYPE_COUNT
+		Count
 	};
 
 	MediaDecoder( );
@@ -111,21 +112,22 @@ public:
 
 private:
 	bool InternalOpen( const std::string &filename = "dummy" );
-	bool InternalRead( StreamType type, AVPacket *packet );
+	AVPacket *InternalRead( StreamType type );
 
-	static int InternalMemoryRead( void *opaque, uint8_t *buf, int buf_size );
-	static int64_t InternalMemorySeek( void *opaque, int64_t offset, int whence );
+	static int32_t InternalMemoryRead( void *opaque, uint8_t *buf, int32_t buf_size );
+	static int64_t InternalMemorySeek( void *opaque, int64_t offset, int32_t whence );
 
-	enum DecodeMode
+	enum class DecodeMode
 	{
-		DECODEMODE_NONE = -1,
-		DECODEMODE_FILE,
-		DECODEMODE_MEMORY,
-		DECODEMODE_STREAM
+		None = -1,
+		File,
+		Memory,
+		Stream
 	};
 
 	typedef void ( *MemoryFreer )( void * );
 
+	std::vector<AVCodecContext *> stream_codecs;
 	AVFormatContext *format_context;
 	std::vector<AVPacket *> queued_packets;
 
@@ -145,7 +147,7 @@ private:
 	float video_framerate;
 	std::chrono::microseconds video_duration;
 
-	bool ignored_streams[STREAMTYPE_COUNT];
+	bool ignored_streams[static_cast<size_t>( StreamType::Count )];
 
 	SwrContext *swr_context;
 	SwsContext *sws_context;
