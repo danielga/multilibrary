@@ -2,7 +2,7 @@
  * MultiLibrary - https://danielga.github.io/multilibrary/
  * A C++ library that covers multiple low level systems.
  *------------------------------------------------------------------------
- * Copyright (c) 2014-2020, Daniel Almeida
+ * Copyright (c) 2014-2022, Daniel Almeida
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
