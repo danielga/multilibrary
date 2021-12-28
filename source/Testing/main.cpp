@@ -63,25 +63,28 @@
 #include <iostream>
 #include <thread>
 #include <iterator>
+#include <string>
+
+using namespace std::chrono_literals;
 
 static void TestSockets( )
 {
-	std::cout << ML::IPAddress( "google.com", 80 ).ToString( ) << "\n";
+	std::cout << ML::IPAddress( "google.com", 80 ).ToString( ) << std::endl;
 
 	ML::HTTP http( "google.com", 80 );
 	ML::HTTP::Response response = http.SendRequest( ML::HTTP::Request( ), 3000 );
-	std::cout << response.GetStatus( ) << "\n" << response.GetBody( ) << "\n\n";
+	std::cout << response.GetStatus( ) << std::endl << response.GetBody( ) << std::endl << std::endl;
 
-	std::string str(
+	ML::ByteBuffer buffer;
+	char data[100] = { 0 };
+	buffer >> data;
+	buffer <<
 		"GET / HTTP/1.1\r\n"
 		"Content-Length: 0\r\n"
 		"Host: google.com\r\n"
 		"From: someguy\r\n"
 		"User-Agent: multilibrarynetwork\r\n"
-		"\r\n"
-	);
-	ML::ByteBuffer buffer;
-	buffer << str;
+		"\r\n";
 
 	ML::SocketTCP socket;
 	socket.Connect( ML::IPAddress( "google.com", 80 ) );
@@ -89,9 +92,11 @@ static void TestSockets( )
 	buffer.Seek( 0 );
 	buffer.Resize( 1000 );
 	socket.Receive( buffer, 0 );
+
+	std::string str;
 	buffer >> str;
 
-	std::cout << str << "\n";
+	std::cout << str << std::endl;
 
 	if( !buffer )
 		std::cout << "Not valid\n";
@@ -131,16 +136,15 @@ static void TestAudio( )
 {
 	ML::AudioDevice device;
 
+	ML::SoundBuffer buffer;
+	if( !buffer.Load( "some_music.mp3" ) )
+		throw std::runtime_error( "failed to load some_music.mp3" );
+
 	ML::Sound sound;
-	{
-		ML::SoundBuffer buffer;
-		buffer.Load( "some_music.mp3" );
+	sound.SetBuffer( buffer );
+	sound.Play( );
 
-		sound.SetBuffer( buffer );
-		sound.Play( );
-
-		std::this_thread::sleep_for( std::chrono::seconds( 5 ) );
-	}
+	std::this_thread::sleep_for( 5000ms );
 }
 
 static void ThreadFunction( std::reference_wrapper<ML::Window> win )
@@ -257,7 +261,15 @@ static void ThreadFunction( std::reference_wrapper<ML::Window> win )
 
 static void TestWindow( )
 {
-	ML::Window window( "Tëst wíndow", ML::WindowSettings( ML::Monitor( true ), true, false, true, 0, 0, 1920, 1080, 8, 8, 8, 8, 24, 8, 0, 8, 2, 0 ) );
+	ML::WindowSettings settings;
+	settings.monitor = ML::Monitor( true );
+	settings.resizable = false;
+	settings.width = 1920;
+	settings.height = 1080;
+	settings.samples = 8;
+	settings.opengl_major = 2;
+
+	ML::Window window( "Tëst wíndow", settings );
 	window.SwapInterval( 60 );
 
 	std::thread thread( &ThreadFunction, std::ref( window ) );
@@ -273,22 +285,41 @@ static void TestProcess( )
 	ML::Process process( "Child.exe" );
 
 	ML::Pipe &input = process.Input( );
-	input << "nope\n" << "nein\n" << "nyet\n" << "nada\n" << static_cast<int32_t>( 56 ) << true;
+	const std::string instr1 = "nope", instr2 = "nein", instr3 = "nyet", instr4 = "nada";
+	const int32_t innum1 = 56;
+	const bool inbool1 = true;
+	input << instr1 << instr2 << instr3 << instr4 << innum1 << inbool1;
 	process.CloseInput( );
 
 	while( process.GetStatus( ) != ML::Process::Status::Terminated )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+		std::this_thread::sleep_for( 10ms );
+
+	ML::Pipe &output = process.Output( );
+	std::string outstr1, outstr2, outstr3, outstr4;
+	int32_t outnum1 = 0;
+	bool outbool1 = false;
+	output >> outstr1 >> outstr2 >> outstr3 >> outstr4 >> outnum1 >> outbool1;
+
+	if( outstr1 != instr4 || outstr2 != instr3 || outstr3 != instr2 || outstr4 != instr1 || outnum1 != innum1 || outbool1 != inbool1 )
+		throw std::runtime_error( "TestProcess failed" );
 
 	std::cout << "Exit code: " << process.ExitCode( );
 }
 
 int main( int, char ** )
 {
-	//TestSockets( );
-	//TestStrings( );
-	//TestFilesystem( );
-	//TestAudio( );
+	(void)&TestSockets;
+	(void)&TestStrings;
+	(void)&TestFilesystem;
+	(void)&TestAudio;
+	(void)&TestWindow;
+	(void)&TestProcess;
+
+	TestSockets( );
+	TestStrings( );
+	TestFilesystem( );
+	TestAudio( );
 	TestWindow( );
-	//TestProcess( );
+	TestProcess( );
 	return 0;
 }

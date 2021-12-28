@@ -35,22 +35,24 @@
 
 #include <MultiLibrary/Common/Pipe.hpp>
 #include <MultiLibrary/Filesystem/Filesystem.hpp>
-#include <iostream>
-#include <thread>
 
-int main( int, char ** )
+#include <string>
+#include <cstdint>
+
+int main( int, const char ** )
 {
-	ML::Pipe pipe( ML::Standard::Input::Normal, ML::Standard::Output::None );
+	ML::Pipe pipe( ML::Standard::Input::Normal, ML::Standard::Output::Normal );
+
 	std::string str1, str2, str3, str4;
 	int32_t num = 0;
-	bool boolean;
+	bool boolean = false;
 	pipe >> str1 >> str2 >> str3 >> str4 >> num >> boolean;
 
 	ML::Filesystem system;
 	ML::File file = system.Open( "lol.txt", "w" );
-	file << str4 << str3 << str2 << str1 << num << boolean;
+	file << str4 << "\n" << str3 << "\n" << str2 << "\n" << str1 << "\n" << num << "\n" << boolean << "\n";
 	file.Close( );
 
-	std::cout << str4 << str3 << str2 << str1 << num << boolean;
+	pipe << str4 << str3 << str2 << str1 << num << boolean;
 	return 0;
 }
