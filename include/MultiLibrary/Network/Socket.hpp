@@ -50,7 +50,7 @@ class ByteBuffer;
 
 #elif defined __APPLE__ || defined __linux
 
-	typedef int SocketHandle;
+	typedef int32_t SocketHandle;
 	
 #endif
 
@@ -85,30 +85,30 @@ public:
 	explicit operator bool( ) const;
 	bool operator!( ) const;
 
-	virtual SocketError Listen( int max_con_requests );
+	virtual SocketError Listen( int32_t max_con_requests );
 
 	virtual bool Open( );
 
-	virtual SocketError Receive( void *buffer, int size, int flags, int *received_bytes = nullptr );
-	virtual SocketError Receive( ByteBuffer &buffer, int flags );
+	virtual SocketError Receive( void *buffer, int32_t size, int32_t flags, int32_t *received_bytes = nullptr );
+	virtual SocketError Receive( ByteBuffer &buffer, int32_t flags );
 
-	virtual SocketError ReceiveFrom( void *buffer, int size, int flags, IPAddress &address, int *received_bytes = nullptr );
-	virtual SocketError ReceiveFrom( ByteBuffer &buffer, int flags, IPAddress &address );
+	virtual SocketError ReceiveFrom( void *buffer, int32_t size, int32_t flags, IPAddress &address, int32_t *received_bytes = nullptr );
+	virtual SocketError ReceiveFrom( ByteBuffer &buffer, int32_t flags, IPAddress &address );
 
 	virtual std::string RemoteAddress( ) const;
 	virtual uint16_t RemotePort( ) const;
 	virtual IPAddress RemoteIPAddress( ) const;
 
-	virtual SocketError Send( const void *buffer, int size, int flags, int *sent_bytes = nullptr );
-	virtual SocketError Send( const ByteBuffer &buffer, int flags, int *sent_bytes = nullptr );
+	virtual SocketError Send( const void *buffer, int32_t size, int32_t flags, int32_t *sent_bytes = nullptr );
+	virtual SocketError Send( const ByteBuffer &buffer, int32_t flags, int32_t *sent_bytes = nullptr );
 
-	virtual SocketError SendTo( const void *buffer, int size, int flags, const IPAddress &address, int *sent_bytes = nullptr );
-	virtual SocketError SendTo( const ByteBuffer &buffer, int flags, const IPAddress &address, int *sent_bytes = nullptr );
+	virtual SocketError SendTo( const void *buffer, int32_t size, int32_t flags, const IPAddress &address, int32_t *sent_bytes = nullptr );
+	virtual SocketError SendTo( const ByteBuffer &buffer, int32_t flags, const IPAddress &address, int32_t *sent_bytes = nullptr );
 
 	virtual SocketError SetBlocking( bool block );
 	virtual SocketError SetTimeout( uint32_t timeout );
 
-	virtual SocketError Shutdown( int flags );
+	virtual SocketError Shutdown( int32_t flags );
 
 	virtual SocketType Type( ) const;
 

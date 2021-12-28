@@ -42,16 +42,16 @@ SocketError::SocketError( ) :
 	error_value( 0 )
 { }
 
-SocketError::SocketError( int error ) :
+SocketError::SocketError( int32_t error ) :
 	error_value( error )
 { }
 
-void SocketError::Set( int error )
+void SocketError::Set( int32_t error )
 {
 	error_value = error;
 }
 
-int SocketError::Get( ) const
+int32_t SocketError::Get( ) const
 {
 	return error_value;
 }

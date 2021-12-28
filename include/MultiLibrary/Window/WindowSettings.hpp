@@ -44,64 +44,24 @@ namespace MultiLibrary
 struct WindowSettings
 {
 public:
-	WindowSettings(
-		const Monitor &monitor = Monitor( ),
-		bool visible = true,
-		bool resizable = true,
-		bool decorated = true,
-		int32_t x = 0,
-		int32_t y = 0,
-		int32_t width = 0,
-		int32_t height = 0,
-		int32_t red_bits = 8,
-		int32_t green_bits = 8,
-		int32_t blue_bits = 8,
-		int32_t alpha_bits = 8,
-		int32_t depth_bits = 24,
-		int32_t stencil_bits = 8,
-		int32_t refresh_rate = 0,
-		int32_t samples = 0,
-		int32_t opengl_major = 1,
-		int32_t opengl_minor = 0
-	) :
-		monitor( monitor ),
-		visible( visible ),
-		resizable( resizable ),
-		decorated( decorated ),
-		x( x ),
-		y( y ),
-		width( width ),
-		height( height ),
-		red_bits( red_bits ),
-		green_bits( green_bits ),
-		blue_bits( blue_bits ),
-		alpha_bits( alpha_bits ),
-		depth_bits( depth_bits ),
-		stencil_bits( stencil_bits ),
-		refresh_rate( refresh_rate ),
-		samples( samples ),
-		opengl_major( opengl_major ),
-		opengl_minor( opengl_minor )
-	{ }
-
 	Monitor monitor;
-	bool visible;
-	bool resizable;
-	bool decorated;
-	int32_t x;
-	int32_t y;
-	int32_t width;
-	int32_t height;
-	int32_t red_bits;
-	int32_t green_bits;
-	int32_t blue_bits;
-	int32_t alpha_bits;
-	int32_t depth_bits;
-	int32_t stencil_bits;
-	int32_t refresh_rate;
-	int32_t samples;
-	int32_t opengl_major;
-	int32_t opengl_minor;
+	bool visible = true;
+	bool resizable = true;
+	bool decorated = true;
+	int32_t x = 0;
+	int32_t y = 0;
+	int32_t width = 0;
+	int32_t height = 0;
+	int32_t red_bits = 8;
+	int32_t green_bits = 8;
+	int32_t blue_bits = 8;
+	int32_t alpha_bits = 8;
+	int32_t depth_bits = 24;
+	int32_t stencil_bits = 8;
+	int32_t refresh_rate = 0;
+	int32_t samples = 0;
+	int32_t opengl_major = 1;
+	int32_t opengl_minor = 0;
 };
 
 } // namespace MultiLibrary

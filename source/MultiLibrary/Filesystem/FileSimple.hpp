@@ -62,9 +62,9 @@ public:
 	bool EndOfFile( ) const;
 
 	size_t Read( void *data, size_t size );
-	int Scan( const char *format, ... );
+	int32_t Scan( const char *format, ... );
 	size_t Write( const void *data, size_t size );
-	int Print( const char *format, ... );
+	int32_t Print( const char *format, ... );
 
 private:
 	Filesystem *parent_filesystem;

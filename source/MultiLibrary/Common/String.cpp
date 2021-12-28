@@ -98,16 +98,16 @@ std::string String::ToUTF8( ) const
 	return utf8_string;
 }
 
-std::basic_string<uint16_t> String::ToUTF16( ) const
+std::u16string String::ToUTF16( ) const
 {
-	std::basic_string<uint16_t> str;
+	std::u16string str;
 	UTF8::ToUTF16( utf8_string.begin( ), utf8_string.end( ), std::back_inserter( str ) );
 	return str;
 }
 
-std::basic_string<uint32_t> String::ToUTF32( ) const
+std::u32string String::ToUTF32( ) const
 {
-	std::basic_string<uint32_t> str;
+	std::u32string str;
 	UTF8::ToUTF32( utf8_string.begin( ), utf8_string.end( ), std::back_inserter( str ) );
 	return str;
 }
@@ -123,6 +123,7 @@ String::operator std::wstring( ) const
 }
 
 // Written by Jack Handy - jakkhandy@hotmail.com
+// https://www.codeproject.com/Articles/1088/Wildcard-string-compare-globbing
 // Adapted for C++ (MultiLibrary)
 bool String::WildcardCompare( const std::string &str, const std::string &wildcard )
 {

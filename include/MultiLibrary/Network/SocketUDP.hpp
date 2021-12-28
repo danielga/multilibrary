@@ -46,7 +46,7 @@ class MULTILIBRARY_NETWORK_API SocketUDP : public Socket
 public:
 	SocketUDP( IPAddressFamily family = FAMILY_INET );
 
-	virtual SocketError Listen( int max_con_requests );
+	virtual SocketError Listen( int32_t max_con_requests );
 
 	virtual bool Open( );
 

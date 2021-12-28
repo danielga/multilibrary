@@ -60,7 +60,7 @@ namespace MultiLibrary
 namespace Internal
 {
 
-static const int __little_endian_t__ = 1;
+static const int32_t __little_endian_t__ = 1;
 static const bool __little_endian__ = *reinterpret_cast<const char *>( &__little_endian_t__ ) == 1;
 template<typename T> static void NetworkCopy( T *dst, const T *src, size_t len )
 {
@@ -200,7 +200,7 @@ uint32_t IPAddress::GetAddress( ) const
 void IPAddress::GetAddress( uint8_t address[4] ) const
 {
 	sockaddr_in *haddress = reinterpret_cast<sockaddr_in *>( host_address );
-	Internal::NetworkCopy( address, reinterpret_cast<uint8_t *>( haddress->sin_addr.s_addr ), 4 );
+	Internal::NetworkCopy( address, reinterpret_cast<uint8_t *>( &haddress->sin_addr.s_addr ), 4 );
 }
 
 void IPAddress::GetAddress( uint16_t address[8] ) const
@@ -209,7 +209,7 @@ void IPAddress::GetAddress( uint16_t address[8] ) const
 	Internal::NetworkCopy( address, reinterpret_cast<uint16_t *>( &haddress->sin6_addr.s6_addr16 ), 8 );
 }
 
-unsigned short IPAddress::GetPort( ) const
+uint16_t IPAddress::GetPort( ) const
 {
 	switch( GetFamily( ) )
 	{
@@ -341,7 +341,7 @@ bool IPAddress::ResolveString( const std::string &address )
 
 	sockaddr_in sock_addr;
 	in_addr &addr = sock_addr.sin_addr;
-	int size = sizeof( sock_addr );
+	int32_t size = sizeof( sock_addr );
 	if( WSAStringToAddress( const_cast<wchar_t *>( waddr.c_str( ) ), AF_INET, nullptr, reinterpret_cast<sockaddr *>( &sock_addr ), &size ) == 0 )
 
 #elif defined __APPLE__ || defined __linux

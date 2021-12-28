@@ -124,7 +124,7 @@ SocketError Socket::Bind( const IPAddress &address )
 	if( !IsValid( ) )
 		return ENOTSOCK;
 
-	int ret = bind( socket_id, address.ToSocketAddress( ), static_cast<socklen_t>( address.GetAddressSize( ) ) );
+	int32_t ret = bind( socket_id, address.ToSocketAddress( ), static_cast<socklen_t>( address.GetAddressSize( ) ) );
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
 }
 
@@ -137,7 +137,7 @@ bool Socket::CanRead( )
 	FD_ZERO( &set );
 	FD_SET( socket_id, &set );
 	timeval wait = { 0, 0 };
-	return select( static_cast<int>( socket_id ) + 1, &set, 0, 0, &wait ) > 0;
+	return select( static_cast<int32_t>( socket_id ) + 1, &set, 0, 0, &wait ) > 0;
 }
 
 bool Socket::CanWrite( )
@@ -149,7 +149,7 @@ bool Socket::CanWrite( )
 	FD_ZERO( &set );
 	FD_SET( socket_id, &set );
 	timeval wait = { 0, 0 };
-	return select( static_cast<int>( socket_id ) + 1, 0, &set, 0, &wait ) > 0;
+	return select( static_cast<int32_t>( socket_id ) + 1, 0, &set, 0, &wait ) > 0;
 }
 
 SocketError Socket::Close( )
@@ -159,7 +159,7 @@ SocketError Socket::Close( )
 
 	Shutdown( 2 );
 
-	int ret = closesocket( socket_id );
+	int32_t ret = closesocket( socket_id );
 	socket_id = INVALID_SOCKET;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
@@ -170,7 +170,7 @@ SocketError Socket::Connect( const IPAddress &address )
 	if( !IsValid( ) )
 		return ENOTSOCK;
 
-	int ret = connect( socket_id, address.ToSocketAddress( ), static_cast<socklen_t>( address.GetAddressSize( ) ) );
+	int32_t ret = connect( socket_id, address.ToSocketAddress( ), static_cast<socklen_t>( address.GetAddressSize( ) ) );
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
 }
 
@@ -194,7 +194,7 @@ bool Socket::operator!( ) const
 	return !IsValid( );
 }
 
-SocketError Socket::Listen( int max_con_requests )
+SocketError Socket::Listen( int32_t max_con_requests )
 {
 	if( !IsValid( ) )
 		return ENOTSOCK;
@@ -207,33 +207,33 @@ bool Socket::Open( )
 	return false;
 }
 
-SocketError Socket::Receive( void *buffer, int size, int flags, int *received_bytes )
+SocketError Socket::Receive( void *buffer, int32_t size, int32_t flags, int32_t *received_bytes )
 {
 	if( !IsValid( ) )
 		return ENOTSOCK;
 
-	int ret = recv( socket_id, static_cast<char *>( buffer ), size, flags );
+	int32_t ret = recv( socket_id, static_cast<char *>( buffer ), size, flags );
 	if( ret != SOCKET_ERROR && received_bytes != nullptr )
 		*received_bytes = ret;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
 }
 
-SocketError Socket::Receive( ByteBuffer &buffer, int flags )
+SocketError Socket::Receive( ByteBuffer &buffer, int32_t flags )
 {
 	if( !IsValid( ) )
 		return ENOTSOCK;
 
 	char *buf = reinterpret_cast<char *>( buffer.GetBuffer( ) );
 
-	int ret = recv( socket_id, buf, static_cast<int>( buffer.Size( ) ), flags );
+	int32_t ret = recv( socket_id, buf, static_cast<int32_t>( buffer.Size( ) ), flags );
 	if( ret != SOCKET_ERROR )
 		buffer.Resize( ret );
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
 }
 
-SocketError Socket::ReceiveFrom( void *buffer, int size, int flags, IPAddress &address, int *received_bytes )
+SocketError Socket::ReceiveFrom( void *buffer, int32_t size, int32_t flags, IPAddress &address, int32_t *received_bytes )
 {
 	if( !IsValid( ) )
 		return ENOTSOCK;
@@ -242,14 +242,14 @@ SocketError Socket::ReceiveFrom( void *buffer, int size, int flags, IPAddress &a
 	sockaddr *addr = address.GetSocketAddress( );
 	socklen_t addr_size = static_cast<socklen_t>( address.GetAddressSize( ) );
 
-	int ret = recvfrom( socket_id, static_cast<char *>( buffer ), size, flags, addr, &addr_size );
+	int32_t ret = recvfrom( socket_id, static_cast<char *>( buffer ), size, flags, addr, &addr_size );
 	if( ret != SOCKET_ERROR && received_bytes != nullptr )
 		*received_bytes = ret;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
 }
 
-SocketError Socket::ReceiveFrom( ByteBuffer &buffer, int flags, IPAddress &address )
+SocketError Socket::ReceiveFrom( ByteBuffer &buffer, int32_t flags, IPAddress &address )
 {
 	if( !IsValid( ) )
 		return ENOTSOCK;
@@ -259,7 +259,7 @@ SocketError Socket::ReceiveFrom( ByteBuffer &buffer, int flags, IPAddress &addre
 	sockaddr *addr = address.GetSocketAddress( );
 	socklen_t addr_size = static_cast<socklen_t>( address.GetAddressSize( ) );
 
-	int ret = recvfrom( socket_id, buf, static_cast<int>( buffer.Size( ) ), flags, addr, &addr_size );
+	int32_t ret = recvfrom( socket_id, buf, static_cast<int32_t>( buffer.Size( ) ), flags, addr, &addr_size );
 	if( ret != SOCKET_ERROR )
 		buffer.Resize( ret );
 
@@ -296,33 +296,33 @@ IPAddress Socket::RemoteIPAddress( ) const
 	return IPAddress( );
 }
 
-SocketError Socket::Send( const void *buffer, int size, int flags, int *sent_bytes )
+SocketError Socket::Send( const void *buffer, int32_t size, int32_t flags, int32_t *sent_bytes )
 {
 	if( !IsValid( ) )
 		return ENOTSOCK;
 
-	int ret = send( socket_id, static_cast<const char *>( buffer ), size, flags );
+	int32_t ret = send( socket_id, static_cast<const char *>( buffer ), size, flags );
 	if( ret != SOCKET_ERROR && sent_bytes != nullptr )
 		*sent_bytes = ret;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
 }
 
-SocketError Socket::Send( const ByteBuffer &buffer, int flags, int *sent_bytes )
+SocketError Socket::Send( const ByteBuffer &buffer, int32_t flags, int32_t *sent_bytes )
 {
 	if( !IsValid( ) )
 		return ENOTSOCK;
 
 	const char *buf = reinterpret_cast<const char *>( buffer.GetBuffer( ) );
 
-	int ret = send( socket_id, buf, static_cast<int>( buffer.Size( ) ), flags );
+	int32_t ret = send( socket_id, buf, static_cast<int32_t>( buffer.Size( ) ), flags );
 	if( ret != SOCKET_ERROR && sent_bytes != nullptr )
 		*sent_bytes = ret;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
 }
 
-SocketError Socket::SendTo( const void *buffer, int size, int flags, const IPAddress &address, int *sent_bytes )
+SocketError Socket::SendTo( const void *buffer, int32_t size, int32_t flags, const IPAddress &address, int32_t *sent_bytes )
 {
 	if( !IsValid( ) )
 		return ENOTSOCK;
@@ -330,14 +330,14 @@ SocketError Socket::SendTo( const void *buffer, int size, int flags, const IPAdd
 	const sockaddr *addr = address.ToSocketAddress( );
 	socklen_t addr_size = static_cast<socklen_t>( address.GetAddressSize( ) );
 
-	int ret = sendto( socket_id, static_cast<const char *>( buffer ), size, flags, addr, addr_size );
+	int32_t ret = sendto( socket_id, static_cast<const char *>( buffer ), size, flags, addr, addr_size );
 	if( ret != SOCKET_ERROR && sent_bytes != nullptr )
 		*sent_bytes = ret;
 
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
 }
 
-SocketError Socket::SendTo( const ByteBuffer &buffer, int flags, const IPAddress &address, int *sent_bytes )
+SocketError Socket::SendTo( const ByteBuffer &buffer, int32_t flags, const IPAddress &address, int32_t *sent_bytes )
 {
 	if( !IsValid( ) )
 		return ENOTSOCK;
@@ -346,7 +346,7 @@ SocketError Socket::SendTo( const ByteBuffer &buffer, int flags, const IPAddress
 	const sockaddr *addr = address.ToSocketAddress( );
 	socklen_t addr_size = static_cast<socklen_t>( address.GetAddressSize( ) );
 
-	int ret = sendto( socket_id, buf, static_cast<int>( buffer.Size( ) ), flags, addr, addr_size );
+	int32_t ret = sendto( socket_id, buf, static_cast<int32_t>( buffer.Size( ) ), flags, addr, addr_size );
 	if( ret != SOCKET_ERROR && sent_bytes != nullptr )
 		*sent_bytes = ret;
 
@@ -359,7 +359,7 @@ SocketError Socket::SetBlocking( bool block )
 		return ENOTSOCK;
 
 	u_long shouldblock = block ? 0 : 1;
-	int ret = ioctlsocket( socket_id, FIONBIO, &shouldblock );
+	int32_t ret = ioctlsocket( socket_id, FIONBIO, &shouldblock );
 	if( ret != SOCKET_ERROR )
 		is_blocking = block;
 
@@ -384,11 +384,11 @@ SocketError Socket::SetTimeout( uint32_t timeout )
 #endif
 
 	const char *t = reinterpret_cast<const char *>( &time );
-	int ret = setsockopt( socket_id, SOL_SOCKET, SO_RCVTIMEO, t, sizeof( time ) );
+	int32_t ret = setsockopt( socket_id, SOL_SOCKET, SO_RCVTIMEO, t, sizeof( time ) );
 	return ret == SOCKET_ERROR ? GetSocketError( ) : 0;
 }
 
-SocketError Socket::Shutdown( int flags )
+SocketError Socket::Shutdown( int32_t flags )
 {
 	if( !IsValid( ) )
 		return ENOTSOCK;

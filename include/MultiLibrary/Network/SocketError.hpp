@@ -44,10 +44,10 @@ class MULTILIBRARY_NETWORK_API SocketError
 {
 public:
 	SocketError( );
-	SocketError( int error );
+	SocketError( int32_t error );
 
-	void Set( int error );
-	int Get( ) const;
+	void Set( int32_t error );
+	int32_t Get( ) const;
 
 	void Clear( );
 
@@ -58,7 +58,7 @@ public:
 	bool operator!=( const SocketError &rhs );
 
 private:
-	int error_value;
+	int32_t error_value;
 };
 
 } // namespace MultiLibrary

@@ -55,8 +55,6 @@ enum ButtonState
 namespace Internal
 {
 
-static const wchar_t window_class[] = L"MultiLibrary";
-
 class WindowInitializer
 {
 public:
@@ -78,7 +76,7 @@ public:
 		if( atom == 0 )
 			throw std::runtime_error( "failed to create window class" );
 
-		class_atom = reinterpret_cast<LPCWSTR>( MAKELONG( atom, 0 ) );
+		class_atom = MAKEINTATOM( atom );
 
 		HWND temp_window = CreateWindowEx( 0, L"STATIC", L"", WS_POPUP | WS_DISABLED, 0, 0, 0, 0, nullptr, nullptr, GetModuleHandle( nullptr ), nullptr );
 		if( temp_window == nullptr )
@@ -126,7 +124,11 @@ private:
 	}
 
 	LPCWSTR class_atom;
+
+	static const wchar_t window_class[];
 };
+
+const wchar_t WindowInitializer::window_class[] = L"MultiLibrary";
 
 static void GetFullWindowSize( DWORD flags, DWORD exflags, int32_t win, int32_t hin, int32_t &wout, int32_t &hout )
 {
@@ -634,20 +636,20 @@ void Window::SetVisible( bool visible )
 	ShowWindow( window_internal->handle.get( ), visible ? SW_SHOWNORMAL : SW_HIDE );
 }
 
-void Window::SwapBuffers( )
+bool Window::SwapBuffers( )
 {
 	if( !IsValid( ) )
-		return;
+		return false;
 
-	::SwapBuffers( window_internal->context.device_context );
+	return ::SwapBuffers( window_internal->context.device_context ) == TRUE;
 }
 
-void Window::SwapInterval( int32_t refreshes )
+bool Window::SwapInterval( int32_t refreshes )
 {
 	if( !IsValid( ) || wglSwapIntervalEXT == nullptr )
-		return;
+		return false;
 
-	wglSwapIntervalEXT( refreshes );
+	return wglSwapIntervalEXT( refreshes ) == TRUE;
 }
 
 void Window::PollEvents( )

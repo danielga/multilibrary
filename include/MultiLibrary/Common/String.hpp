@@ -64,8 +64,8 @@ public:
 	std::string ToANSI( ) const;
 	std::wstring ToWideString( ) const;
 	std::string ToUTF8( ) const;
-	std::basic_string<uint16_t> ToUTF16( ) const;
-	std::basic_string<uint32_t> ToUTF32( ) const;
+	std::u16string ToUTF16( ) const;
+	std::u32string ToUTF32( ) const;
 
 	operator std::string( ) const;
 	operator std::wstring( ) const;

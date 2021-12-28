@@ -58,7 +58,7 @@ SocketUDP::SocketUDP( IPAddressFamily family ) :
 	Open( );
 }
 
-SocketError SocketUDP::Listen( const int )
+SocketError SocketUDP::Listen( const int32_t )
 {
 	return ENOTSUP;
 }

@@ -113,8 +113,8 @@ public:
 	bool IsVisible( ) const;
 	void SetVisible( bool visible = true );
 
-	void SwapBuffers( );
-	void SwapInterval( int32_t refreshes );
+	bool SwapBuffers( );
+	bool SwapInterval( int32_t refreshes );
 
 	static void PollEvents( );
 	static void WaitEvents( );

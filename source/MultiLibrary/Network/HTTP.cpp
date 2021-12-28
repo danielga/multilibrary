@@ -170,7 +170,7 @@ void HTTP::Response::ParseResponse( const std::string &data )
 		}
 	}
 
-	int stat;
+	int32_t stat;
 	if( in >> stat )
 	{
 		status = static_cast<Status>( stat );
@@ -270,15 +270,15 @@ HTTP::Response HTTP::SendRequest( const HTTP::Request &request, uint32_t timeout
 	{
 		std::string reqString = req.BuildRequest( );
 		if( !reqString.empty( ) &&
-			!connection.Send( reqString.c_str( ), static_cast<int>( reqString.size( ) ), 0 ) )
+			!connection.Send( reqString.c_str( ), static_cast<int32_t>( reqString.size( ) ), 0 ) )
 		{
 			std::string received;
-			int size = 0;
+			int32_t size = 0;
 			char buffer[1024];
 			while( !connection.Receive( buffer, sizeof( buffer ), 0, &size ) )
 			{
 				received.append( buffer, buffer + size );
-				if( size < static_cast<int>( sizeof( buffer ) ) )
+				if( size < static_cast<int32_t>( sizeof( buffer ) ) )
 				{
 					break;
 				}

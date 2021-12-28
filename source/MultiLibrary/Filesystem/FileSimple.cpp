@@ -96,7 +96,7 @@ int64_t FileSimple::Size( ) const
 
 bool FileSimple::Seek( int64_t pos, SeekMode mode )
 {
-	return fseeko64( static_cast<FILE *>( file_pointer ), pos, mode ) == 0;
+	return fseeko64( static_cast<FILE *>( file_pointer ), pos, static_cast<int32_t>( mode ) ) == 0;
 }
 
 bool FileSimple::Flush( )
@@ -121,13 +121,13 @@ size_t FileSimple::Read( void *data, size_t size )
 	return fread( data, 1, size, static_cast<FILE *>( file_pointer ) );
 }
 
-int FileSimple::Scan( const char *format, ... )
+int32_t FileSimple::Scan( const char *format, ... )
 {
 	assert( format != nullptr );
 
 	va_list args;
 	va_start( args, format );
-	int num = vfscanf( static_cast<FILE *>( file_pointer ), format, args );
+	int32_t num = vfscanf( static_cast<FILE *>( file_pointer ), format, args );
 	va_end( args );
 	return num;
 }
@@ -139,13 +139,13 @@ size_t FileSimple::Write( const void *data, size_t size )
 	return fwrite( data, 1, size, static_cast<FILE *>( file_pointer ) );
 }
 
-int FileSimple::Print( const char *format, ... )
+int32_t FileSimple::Print( const char *format, ... )
 {
 	assert( format != nullptr );
 
 	va_list args;
 	va_start( args, format );
-	int num = vfprintf( static_cast<FILE *>( file_pointer ), format, args );
+	int32_t num = vfprintf( static_cast<FILE *>( file_pointer ), format, args );
 	va_end( args );
 	return num;
 }

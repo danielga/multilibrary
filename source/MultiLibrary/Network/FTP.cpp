@@ -385,7 +385,7 @@ FTP::Response FTP::GetResponse( )
 		std::istringstream in( std::string( buffer, length ), std::ios_base::binary );
 		while( in )
 		{
-			unsigned int code;
+			uint32_t code;
 			if( in >> code )
 			{
 				char separator;

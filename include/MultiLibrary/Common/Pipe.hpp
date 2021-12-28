@@ -77,6 +77,8 @@ public:
 	 */
 	Pipe( bool read_inheritable, bool write_inheritable );
 
+	Pipe( Pipe &&pipe ) noexcept;
+
 	/*!
 	 \brief Destructor.
 
