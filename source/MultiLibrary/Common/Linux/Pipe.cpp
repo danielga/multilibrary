@@ -104,6 +104,11 @@ Pipe::Pipe( bool, bool )
 	write_handle.reset( new Handle( handles[1] ) );
 }
 
+Pipe::Pipe( Pipe &&pipe ) noexcept :
+	read_handle( std::move( pipe.read_handle ) ),
+	write_handle( std::move( pipe.write_handle ) )
+{ }
+
 Pipe::~Pipe( )
 {
 	CloseRead( );
