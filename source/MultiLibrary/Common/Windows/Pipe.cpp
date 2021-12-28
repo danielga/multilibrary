@@ -161,17 +161,22 @@ bool Pipe::IsValid( ) const
 	return read_handle || write_handle;
 }
 
+bool Pipe::Seek( size_t )
+{
+	return false;
+}
+
 bool Pipe::Seek( int64_t, SeekMode )
 {
 	return false;
 }
 
-int64_t Pipe::Tell( ) const
+size_t Pipe::Tell( ) const
 {
 	return 0;
 }
 
-int64_t Pipe::Size( ) const
+size_t Pipe::Size( ) const
 {
 	if( !read_handle )
 		return 0;

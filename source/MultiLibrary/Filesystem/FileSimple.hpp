@@ -56,7 +56,7 @@ public:
 	const std::string &GetPath( ) const;
 	int64_t Tell( ) const;
 	int64_t Size( ) const;
-	bool Seek( int64_t pos, SeekMode mode = SEEKMODE_SET );
+	bool Seek( int64_t pos, SeekMode mode = SeekMode::Set );
 	bool Flush( );
 	bool Errored( ) const;
 	bool EndOfFile( ) const;

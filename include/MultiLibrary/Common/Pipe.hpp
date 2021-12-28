@@ -89,28 +89,37 @@ public:
 	bool IsValid( ) const;
 
 	/*!
+	\brief Set the current position for read/write operations.
+
+	\param position Position value.
+
+	\return true if it succeeds, false if it fails.
+	*/
+	bool Seek( size_t position );
+
+	/*!
 	 \brief Set the current position for read/write operations.
 
 	 \param position Position value.
-	 \param mode (Optional) Type of seeking pretended.
+	 \param mode Type of seeking pretended.
 
 	 \return true if it succeeds, false if it fails.
 	 */
-	bool Seek( int64_t position, SeekMode mode = SEEKMODE_SET );
+	bool Seek( int64_t position, SeekMode mode );
 
 	/*!
 	 \brief Get the current position.
 
 	 \return Current position.
 	 */
-	int64_t Tell( ) const;
+	size_t Tell( ) const;
 
 	/*!
 	 \brief Get the size.
 
 	 \return Size of internal data.
 	 */
-	int64_t Size( ) const;
+	size_t Size( ) const;
 
 	/*!
 	 \brief Return whether we reached end of file or not.

@@ -123,7 +123,7 @@ public:
 
 	 \return Current position of read/write operations on the buffer.
 	 */
-	int64_t Tell( ) const;
+	size_t Tell( ) const;
 
 	/*!
 	 \brief Return the size of the buffer.
@@ -135,7 +135,7 @@ public:
 
 	 \sa Capacity
 	 */
-	int64_t Size( ) const;
+	size_t Size( ) const;
 
 	/*!
 	 \brief Return the capacity of this object.
@@ -150,16 +150,27 @@ public:
 	size_t Capacity( ) const;
 
 	/*!
+	\brief Set the current position of read/write operations.
+
+	Currently this operation is always successful.
+
+	\param position Position to set the pointer to.
+
+	\return Success of this operation.
+	*/
+	bool Seek( size_t position );
+
+	/*!
 	 \brief Set the current position of read/write operations.
 
 	 Currently this operation is always successful.
 
 	 \param position Position to set the pointer to.
-	 \param mode (Optional) Type of seeking pretended.
+	 \param mode Type of seeking pretended.
 
 	 \return Success of this operation.
 	 */
-	bool Seek( int64_t position, SeekMode mode = SEEKMODE_SET );
+	bool Seek( int64_t position, SeekMode mode );
 
 	/*!
 	 \brief Tell if the end of file was reached.

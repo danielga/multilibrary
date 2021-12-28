@@ -53,7 +53,7 @@ public:
 	virtual const std::string &GetPath( ) const = 0;
 	virtual int64_t Tell( ) const = 0;
 	virtual int64_t Size( ) const = 0;
-	virtual bool Seek( int64_t pos, SeekMode mode = SEEKMODE_SET ) = 0;
+	virtual bool Seek( int64_t pos, SeekMode mode = SeekMode::Set ) = 0;
 	virtual bool Flush( ) = 0;
 	virtual bool Errored( ) const = 0;
 	virtual bool EndOfFile( ) const = 0;

@@ -34,180 +34,68 @@
  *************************************************************************/
 
 #include <MultiLibrary/Common/InputStream.hpp>
-#include <cassert>
 
 namespace MultiLibrary
 {
 
-InputStream &InputStream::operator>>( bool &data )
-{
-	bool value;
-	if( Read( &value, sizeof( bool ) ) == sizeof( bool ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( int8_t &data )
-{
-	int8_t value;
-	if( Read( &value, sizeof( int8_t ) ) == sizeof( int8_t ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( uint8_t &data )
-{
-	uint8_t value;
-	if( Read( &value, sizeof( uint8_t ) ) == sizeof( uint8_t ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( int16_t &data )
-{
-	int16_t value;
-	if( Read( &value, sizeof( int16_t ) ) == sizeof( int16_t ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( uint16_t &data )
-{
-	uint16_t value;
-	if( Read( &value, sizeof( uint16_t ) ) == sizeof( uint16_t ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( int32_t &data )
-{
-	int32_t value;
-	if( Read( &value, sizeof( int32_t ) ) == sizeof( int32_t ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( uint32_t &data )
-{
-	uint32_t value;
-	if( Read( &value, sizeof( uint32_t ) ) == sizeof( uint32_t ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( int64_t &data )
-{
-	int64_t value;
-	if( Read( &value, sizeof( int64_t ) ) == sizeof( int64_t ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( uint64_t &data )
-{
-	uint64_t value;
-	if( Read( &value, sizeof( uint64_t ) ) == sizeof( uint64_t ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( float &data )
-{
-	float value;
-	if( Read( &value, sizeof( float ) ) == sizeof( float ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( double &data )
-{
-	double value;
-	if( Read( &value, sizeof( double ) ) == sizeof( double ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( char &data )
-{
-	char value;
-	if( Read( &value, sizeof( char ) ) == sizeof( char ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( char *data )
-{
-	assert( data != nullptr );
-
-	char ch = '\0';
-	size_t offset = 0;
-	while( Read( &ch, sizeof( ch ) ) == sizeof( ch ) )
-	{
-		data[offset] = ch;
-
-		if( ch == '\0' )
-			break;
-
-		++offset;
-	}
-
-	return *this;
-}
-
 InputStream &InputStream::operator>>( std::string &data )
 {
-	char ch = '\0';
-	while( Read( &ch, sizeof( ch ) ) == sizeof( ch ) && ch != '\0' )
+	char ch = '\0', nch = '\0';
+	if( Read( &ch, sizeof( ch ) ) != sizeof( ch ) || ch == '\0' || ch == '\n' )
+		return *this;
+
+	do
+	{
+		if( Read( &nch, sizeof( nch ) ) != sizeof( nch ) || nch == '\0' || nch == '\n' )
+		{
+
+#ifdef _WIN32
+
+			if( ch == '\r' )
+				break;
+
+#endif
+
+			data += ch;
+			break;
+		}
+
 		data += ch;
 
-	return *this;
-}
-
-InputStream &InputStream::operator>>( wchar_t &data )
-{
-	wchar_t value;
-	if( Read( &value, sizeof( value ) ) == sizeof( value ) )
-		data = value;
-
-	return *this;
-}
-
-InputStream &InputStream::operator>>( wchar_t *data )
-{
-	assert( data != nullptr );
-
-	wchar_t ch = L'\0';
-	size_t offset = 0;
-	while( Read( &ch, sizeof( ch ) ) == sizeof( ch ) )
-	{
-		data[offset] = ch;
-
-		if( ch == L'\0' )
-			break;
-
-		++offset;
+		ch = nch;
 	}
+	while( ch != '\0' && ch != '\n' );
 
 	return *this;
 }
 
 InputStream &InputStream::operator>>( std::wstring &data )
 {
-	wchar_t ch = L'\0';
-	while( Read( &ch, sizeof( ch ) ) == sizeof( ch ) && ch != L'\0' )
+	wchar_t ch = L'\0', nch = L'\0';
+	if( Read( &ch, sizeof( ch ) ) != sizeof( ch ) || ch == L'\0' || ch == L'\n' )
+		return *this;
+
+	do
+	{
+		if( Read( &nch, sizeof( nch ) ) != sizeof( nch ) || nch == L'\0' || nch == L'\n' )
+		{
+
+#ifdef _WIN32
+
+			if( ch == L'\r' )
+				break;
+
+#endif
+
+			data += ch;
+			break;
+		}
+
 		data += ch;
+
+		ch = nch;
+	}
+	while( ch != L'\0' && ch != L'\n' );
 
 	return *this;
 }

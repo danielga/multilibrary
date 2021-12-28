@@ -82,20 +82,34 @@ const std::string &File::GetPath( ) const
 	return invalid;
 }
 
-int64_t File::Tell( ) const
+size_t File::Tell( ) const
 {
 	if( file_internal )
-		return file_internal->Tell( );
+	{
+		int64_t offset = file_internal->Tell( );
+		return offset > 0 ? static_cast<size_t>( offset ) : 0;
+	}
 
 	return 0;
 }
 
-int64_t File::Size( ) const
+size_t File::Size( ) const
 {
 	if( file_internal )
-		return file_internal->Size( );
+	{
+		int64_t size = file_internal->Size( );
+		return size > 0 ? static_cast<size_t>( size ) : 0;
+	}
 
 	return 0;
+}
+
+bool File::Seek( size_t pos )
+{
+	if( file_internal )
+		return file_internal->Seek( pos, SeekMode::Set );
+
+	return false;
 }
 
 bool File::Seek( int64_t pos, SeekMode mode )
@@ -157,12 +171,12 @@ InputStream &File::operator>>( bool &data )
 		}
 		else if( strncmp( value, "true", 4 ) == 0 )
 		{
-			Seek( -1, SEEKMODE_CUR );
+			Seek( -1, SeekMode::Cur );
 			data = true;
 		}
 		else
 		{
-			Seek( -5, SEEKMODE_CUR );
+			Seek( -5, SeekMode::Cur );
 		}
 	}
 

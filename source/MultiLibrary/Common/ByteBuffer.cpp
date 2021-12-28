@@ -78,14 +78,14 @@ bool ByteBuffer::operator!( ) const
 	return !IsValid( );
 }
 
-int64_t ByteBuffer::Tell( ) const
+size_t ByteBuffer::Tell( ) const
 {
-	return static_cast<int64_t>( buffer_offset );
+	return buffer_offset;
 }
 
-int64_t ByteBuffer::Size( ) const
+size_t ByteBuffer::Size( ) const
 {
-	return static_cast<int64_t>( buffer_internal.size( ) );
+	return buffer_internal.size( );
 }
 
 size_t ByteBuffer::Capacity( ) const
@@ -93,35 +93,36 @@ size_t ByteBuffer::Capacity( ) const
 	return buffer_internal.capacity( );
 }
 
+bool ByteBuffer::Seek( size_t position )
+{
+	buffer_offset = position;
+	end_of_file = buffer_offset >= Size( );
+	return true;
+}
+
 bool ByteBuffer::Seek( int64_t position, SeekMode mode )
 {
-	assert( mode != SEEKMODE_SET || ( mode == SEEKMODE_SET && position >= 0 ) );
-	assert( mode != SEEKMODE_CUR || ( mode == SEEKMODE_CUR && Tell( ) + position >= 0 ) );
-	assert( mode != SEEKMODE_END || ( mode == SEEKMODE_END && Size( ) + position >= 0 ) );
+	assert( mode != SeekMode::Set || ( mode == SeekMode::Set && position >= 0 ) );
+	assert( mode != SeekMode::Cur || ( mode == SeekMode::Cur && Tell( ) + position >= 0 ) );
+	assert( mode != SeekMode::End || ( mode == SeekMode::End && Size( ) + position >= 0 ) );
 
 	int64_t temp;
 	switch( mode )
 	{
-	case SEEKMODE_SET:
-		buffer_offset = static_cast<size_t>( position > 0 ? position : 0 );
-		break;
+	case SeekMode::Set:
+		return Seek( static_cast<size_t>( position > 0 ? position : 0 ) );
 
-	case SEEKMODE_CUR:
+	case SeekMode::Cur:
 		temp = Tell( ) + position;
-		buffer_offset = static_cast<size_t>( temp > 0 ? temp : 0 );
-		break;
+		return Seek( static_cast<size_t>( temp > 0 ? temp : 0 ) );
 
-	case SEEKMODE_END:
+	case SeekMode::End:
 		temp = Size( ) + position;
-		buffer_offset = static_cast<size_t>( temp > 0 ? temp : 0 );
-		break;
+		return Seek( static_cast<size_t>( temp > 0 ? temp : 0 ) );
 
 	default:
 		return false;
 	}
-
-	end_of_file = false;
-	return true;
 }
 
 bool ByteBuffer::EndOfFile( ) const
@@ -154,6 +155,9 @@ void ByteBuffer::Reserve( size_t capacity )
 void ByteBuffer::Resize( size_t size )
 {
 	buffer_internal.resize( size );
+
+	if( size < buffer_offset )
+		end_of_file = true;
 }
 
 void ByteBuffer::ShrinkToFit( )
@@ -200,6 +204,7 @@ size_t ByteBuffer::Write( const void *value, size_t size )
 
 	std::memcpy( &buffer_internal[buffer_offset], value, size );
 	buffer_offset += size;
+	end_of_file = false;
 	return size;
 }
 

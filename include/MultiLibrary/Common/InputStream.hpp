@@ -64,142 +64,49 @@ public:
 	 \param data Where to store the data.
 
 	 \return This object.
-	 */
-	virtual InputStream &operator>>( bool &data );
-
-	/*!
-	 \brief Read data from the buffer into a variable.
-
-	 \param data Where to store the data.
-
-	 \return This object.
 
 	 \overload
 	 */
-	virtual InputStream &operator>>( int8_t &data );
+	template<typename Type>
+	InputStream &operator>>( Type &data )
+	{
+		Type value;
+		if( Read( &value, sizeof( Type ) ) == sizeof( Type ) )
+			data = value;
+
+		return *this;
+	}
 
 	/*!
-	 \brief Read data from the buffer into a variable.
+	\brief Read data from the buffer into an array.
 
-	 \param data Where to store the data.
+	\param data Where to store the data.
 
-	 \return This object.
+	\return This object.
 
-	 \overload
-	 */
-	virtual InputStream &operator>>( uint8_t &data );
+	\overload
+	*/
+	template<size_t Length>
+	InputStream &operator>>( char ( &data )[Length] )
+	{
+		char ch = '\0';
+		size_t offset = 0;
+		while( offset < Length && Read( &ch, sizeof( ch ) ) == sizeof( ch ) )
+		{
+			data[offset] = ch;
 
-	/*!
-	 \brief Read data from the buffer into a variable.
+			if( ch == '\0' || ch == '\n' )
+				return *this;
 
-	 \param data Where to store the data.
+			++offset;
+		}
 
-	 \return This object.
+		if( offset >= Length )
+			offset = Length - 1;
 
-	 \overload
-	 */
-	virtual InputStream &operator>>( int16_t &data );
-
-	/*!
-	 \brief Read data from the buffer into a variable.
-
-	 \param data Where to store the data.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual InputStream &operator>>( uint16_t &data );
-
-	/*!
-	 \brief Read data from the buffer into a variable.
-
-	 \param data Where to store the data.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual InputStream &operator>>( int32_t &data );
-
-	/*!
-	 \brief Read data from the buffer into a variable.
-
-	 \param data Where to store the data.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual InputStream &operator>>( uint32_t &data );
-
-	/*!
-	 \brief Read data from the buffer into a variable.
-
-	 \param data Where to store the data.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual InputStream &operator>>( int64_t &data );
-
-	/*!
-	 \brief Read data from the buffer into a variable.
-
-	 \param data Where to store the data.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual InputStream &operator>>( uint64_t &data );
-
-	/*!
-	 \brief Read data from the buffer into a variable.
-
-	 \param data Where to store the data.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual InputStream &operator>>( float &data );
-
-	/*!
-	 \brief Read data from the buffer into a variable.
-
-	 \param data Where to store the data.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual InputStream &operator>>( double &data );
-
-	/*!
-	 \brief Read data from the buffer into a variable.
-
-	 \param data Where to store the data.
-
-	 \return This object.
-
-	 \overload
-	 */
-	virtual InputStream &operator>>( char &data );
-
-	/*!
-	 \brief Read data from the buffer into an array.
-
-	 \param data Where to store the data.
-
-	 \return This object.
-
-	 \overload
-
-	 \deprecated This function is unsafe since the array size is unknown.
-	 */
-	virtual InputStream &operator>>( char *data );
+		data[offset] = '\0';
+		return *this;
+	}
 
 	/*!
 	 \brief Read data from the buffer into an object.
@@ -210,31 +117,38 @@ public:
 
 	 \overload
 	 */
-	virtual InputStream &operator>>( std::string &data );
+	InputStream &operator>>( std::string &data );
 
 	/*!
-	 \brief Read data from the buffer into a variable.
+	\brief Read data from the buffer into an array.
 
-	 \param data Where to store the data.
+	\param data Where to store the data.
 
-	 \return This object.
+	\return This object.
 
-	 \overload
-	 */
-	virtual InputStream &operator>>( wchar_t &data );
+	\overload
+	*/
+	template<size_t Length>
+	InputStream &operator>>( wchar_t ( &data )[Length] )
+	{
+		wchar_t ch = L'\0';
+		size_t offset = 0;
+		while( offset < Length && Read( &ch, sizeof( ch ) ) == sizeof( ch ) )
+		{
+			data[offset] = ch;
 
-	/*!
-	 \brief Read data from the buffer into an array.
+			if( ch == L'\0' || ch == L'\n' )
+				return *this;
 
-	 \param data Where to store the data.
+			++offset;
+		}
 
-	 \return This object.
+		if( offset >= Length )
+			offset = Length - 1;
 
-	 \overload
-
-	 \deprecated This function is unsafe since the array size is unknown.
-	 */
-	virtual InputStream &operator>>( wchar_t *data );
+		data[offset] = L'\0';
+		return *this;
+	}
 
 	/*!
 	 \brief Read data from the buffer into an object.
@@ -245,7 +159,7 @@ public:
 
 	 \overload
 	 */
-	virtual InputStream &operator>>( std::wstring &data );
+	InputStream &operator>>( std::wstring &data );
 };
 
 } // namespace MultiLibrary

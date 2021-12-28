@@ -40,78 +40,6 @@
 namespace MultiLibrary
 {
 
-OutputStream &OutputStream::operator<<( const bool &data )
-{
-	Write( &data, sizeof( bool ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const int8_t &data )
-{
-	Write( &data, sizeof( int8_t ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const uint8_t &data )
-{
-	Write( &data, sizeof( uint8_t ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const int16_t &data )
-{
-	Write( &data, sizeof( int16_t ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const uint16_t &data )
-{
-	Write( &data, sizeof( uint16_t ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const int32_t &data )
-{
-	Write( &data, sizeof( int32_t ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const uint32_t &data )
-{
-	Write( &data, sizeof( uint32_t ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const int64_t &data )
-{
-	Write( &data, sizeof( int64_t ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const uint64_t &data )
-{
-	Write( &data, sizeof( uint64_t ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const float &data )
-{
-	Write( &data, sizeof( float ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const double &data )
-{
-	Write( &data, sizeof( double ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const char &data )
-{
-	Write( &data, sizeof( char ) );
-	return *this;
-}
-
 OutputStream &OutputStream::operator<<( const char *data )
 {
 	assert( data != nullptr );
@@ -123,12 +51,6 @@ OutputStream &OutputStream::operator<<( const char *data )
 OutputStream &OutputStream::operator<<( const std::string &data )
 {
 	Write( data.c_str( ), ( data.length( ) + 1 ) * sizeof( char ) );
-	return *this;
-}
-
-OutputStream &OutputStream::operator<<( const wchar_t &data )
-{
-	Write( &data, sizeof( wchar_t ) );
 	return *this;
 }
 

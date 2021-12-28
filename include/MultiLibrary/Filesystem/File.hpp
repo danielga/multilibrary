@@ -64,9 +64,10 @@ public:
 
 	const std::string &GetPath( ) const;
 
-	int64_t Tell( ) const;
-	int64_t Size( ) const;
-	bool Seek( int64_t pos, SeekMode mode = SEEKMODE_SET );
+	size_t Tell( ) const;
+	size_t Size( ) const;
+	bool Seek( size_t pos );
+	bool Seek( int64_t pos, SeekMode mode );
 
 	bool Flush( );
 
