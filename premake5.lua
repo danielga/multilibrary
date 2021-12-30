@@ -9,9 +9,9 @@ newoption({
 
 newoption({
 	trigger = "glew-linking",
-	description = "How to link with GLEW",
-	value = "Should be 'static', 'dynamic' or 'compile'",
-	default = "static",
+	description = "Linking strategy with GLEW",
+	value = "VALUE",
+	default = "compile",
 	allowed = {
 		{"static", "Statically links against GLEW"},
 		{"dynamic", "Dynamically links with GLEW"},
@@ -21,13 +21,15 @@ newoption({
 
 newoption({
 	trigger = "thirdparty-directory",
-	value = "thirdparty (default)",
-	description = "Sets the path of third-party libraries relative to the current system projects directory (\"thirdparty\" would use \"projects/windows/thirdparty\", for example, on Windows)."
+	description = "Path to third-party libraries, useful mostly for Windows",
+	value = "PATH",
+	default = "thirdparty"
 })
 
 SOURCE_DIRECTORY = "source"
 INCLUDE_DIRECTORY = "include"
-THIRDPARTY_DIRECTORY = "projects/" .. os.target() .. "/" .. (_OPTIONS["thirdparty-directory"] or "thirdparty")
+THIRDPARTY_ROOT_DIRECTORY = _OPTIONS["thirdparty-directory"]
+THIRDPARTY_DIRECTORY = THIRDPARTY_ROOT_DIRECTORY .. "/" .. os.target()
 PROJECT_DIRECTORY = "projects/" .. os.target() .. "/" .. _ACTION
 
 if _ACTION == "clean" then
@@ -38,9 +40,7 @@ if _ACTION == "clean" then
 
 	local dirs = os.matchdirs("projects/" .. os.target() .. "/*")
 	for _, dir in pairs(dirs) do
-		if dir ~= THIRDPARTY_DIRECTORY then
-			os.outputof(rmfmt:format(dir))
-		end
+		os.outputof(rmfmt:format(dir))
 	end
 
 	return
@@ -211,10 +211,6 @@ solution("MultiLibrary")
 
 		filter("options:not glew-linking=dynamic")
 			defines("GLEW_STATIC")
-
-		filter("options:glew-linking=compile")
-			vpaths({["Source files"] = THIRDPARTY_DIRECTORY .. "/src/**.c"})
-			files(THIRDPARTY_DIRECTORY .. "/src/glew.c")
 
 		filter({"system:windows", "configurations:Debug (static) or Release (static)"})
 			links({"avcodec", "avformat", "avutil", "swscale", "swresample", "openal32", "ws2_32", "opengl32", "gdi32"})
@@ -420,8 +416,8 @@ solution("MultiLibrary")
 				defines("GLEW_STATIC")
 
 			filter("options:glew-linking=compile")
-				vpaths({["Source files"] = THIRDPARTY_DIRECTORY .. "/src/**.c"})
-				files(THIRDPARTY_DIRECTORY .. "/src/glew.c")
+				sysincludedirs(THIRDPARTY_ROOT_DIRECTORY .. "/include")
+				links("glew")
 
 			filter("system:windows")
 				files({
@@ -486,8 +482,8 @@ solution("MultiLibrary")
 				defines("GLEW_STATIC")
 
 			filter("options:glew-linking=compile")
-				vpaths({["Source files"] = THIRDPARTY_DIRECTORY .. "/src/**.c"})
-				files(THIRDPARTY_DIRECTORY .. "/src/glew.c")
+				sysincludedirs(THIRDPARTY_ROOT_DIRECTORY .. "/include")
+				links("glew")
 
 			filter({"system:windows", "configurations:Debug or Release"})
 				links({"Window", "Common", "opengl32"})
@@ -510,3 +506,15 @@ solution("MultiLibrary")
 
 				filter({"system:macosx", "configurations:Debug or Release", "options:not glew-linking=compile"})
 					links("GLEW")
+
+		if _OPTIONS["glew-linking"] == "compile" then
+			project("glew")
+				uuid("54C4C07B-982E-4E33-8658-43E15AA69311")
+				language("C")
+				kind("StaticLib")
+				defines("GLEW_STATIC")
+				links("opengl32")
+				vpaths({["Source files"] = THIRDPARTY_ROOT_DIRECTORY .. "/src/**.c"})
+				sysincludedirs(THIRDPARTY_ROOT_DIRECTORY .. "/include")
+				files(THIRDPARTY_ROOT_DIRECTORY .. "/src/glew.c")
+		end
