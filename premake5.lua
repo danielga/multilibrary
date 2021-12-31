@@ -105,8 +105,11 @@ solution("MultiLibrary")
 	flags("NoPCH")
 	characterset("Unicode")
 	platforms({"x86", "x64"})
-	configurations({"Release", "Debug", "Release (static)", "Debug (static)"})
+	configurations({"Release", "Debug", "ReleaseStatic", "DebugStatic"})
 	startproject("Testing")
+	targetdir("%{wks.location}/%{cfg.architecture}/%{cfg.buildcfg}")
+	debugdir("%{wks.location}/%{cfg.architecture}/%{cfg.buildcfg}")
+	objdir("!%{wks.location}/%{cfg.architecture}/%{cfg.buildcfg}/intermediate/%{prj.name}")
 
 	filter("platforms:x86")
 		architecture("x32")
@@ -138,67 +141,27 @@ solution("MultiLibrary")
 		vectorextensions("SSE2")
 		kind("SharedLib")
 
-		filter({"configurations:Release", "platforms:x86"})
-			targetdir(PROJECT_DIRECTORY .. "/x86/release")
-			debugdir(PROJECT_DIRECTORY .. "/x86/release")
-			objdir("!" .. PROJECT_DIRECTORY .. "/x86/release/intermediate/%{prj.name}")
-
-		filter({"configurations:Release", "platforms:x64"})
-			targetdir(PROJECT_DIRECTORY .. "/x64/release")
-			debugdir(PROJECT_DIRECTORY .. "/x64/release")
-			objdir("!" .. PROJECT_DIRECTORY .. "/x64/release/intermediate/%{prj.name}")
-
 	filter("configurations:Debug")
 		defines("MULTILIBRARY_DEBUG")
 		symbols("On")
 		kind("SharedLib")
 
-		filter({"configurations:Debug", "platforms:x86"})
-			targetdir(PROJECT_DIRECTORY .. "/x86/debug")
-			debugdir(PROJECT_DIRECTORY .. "/x86/debug")
-			objdir("!" .. PROJECT_DIRECTORY .. "/x86/debug/intermediate/%{prj.name}")
-
-		filter({"configurations:Debug", "platforms:x64"})
-			targetdir(PROJECT_DIRECTORY .. "/x64/debug")
-			debugdir(PROJECT_DIRECTORY .. "/x64/debug")
-			objdir("!" .. PROJECT_DIRECTORY .. "/x64/debug/intermediate/%{prj.name}")
-
-	filter("configurations:Release (static)")
+	filter("configurations:ReleaseStatic")
 		defines("MULTILIBRARY_STATIC")
 		optimize("On")
 		vectorextensions("SSE2")
 		kind("StaticLib")
 
-		filter({"configurations:Release (static)", "options:static-runtime"})
+		filter({"configurations:ReleaseStatic", "options:static-runtime"})
 			staticruntime("On")
 
-		filter({"configurations:Release (static)", "platforms:x86"})
-			targetdir(PROJECT_DIRECTORY .. "/x86/release-static")
-			debugdir(PROJECT_DIRECTORY .. "/x86/release-static")
-			objdir("!" .. PROJECT_DIRECTORY .. "/x86/release-static/intermediate/%{prj.name}")
-
-		filter({"configurations:Release (static)", "platforms:x64"})
-			targetdir(PROJECT_DIRECTORY .. "/x64/release-static")
-			debugdir(PROJECT_DIRECTORY .. "/x64/release-static")
-			objdir("!" .. PROJECT_DIRECTORY .. "/x64/release-static/intermediate/%{prj.name}")
-
-	filter("configurations:Debug (static)")
+	filter("configurations:DebugStatic")
 		defines({"MULTILIBRARY_DEBUG", "MULTILIBRARY_STATIC"})
 		symbols("On")
 		kind("StaticLib")
 
-		filter({"configurations:Debug (static)", "options:static-runtime"})
+		filter({"configurations:DebugStatic", "options:static-runtime"})
 			staticruntime("On")
-
-		filter({"configurations:Debug (static)", "platforms:x86"})
-			targetdir(PROJECT_DIRECTORY .. "/x86/debug-static")
-			debugdir(PROJECT_DIRECTORY .. "/x86/debug-static")
-			objdir("!" .. PROJECT_DIRECTORY .. "/x86/debug-static/intermediate/%{prj.name}")
-
-		filter({"configurations:Debug (static)", "platforms:x64"})
-			targetdir(PROJECT_DIRECTORY .. "/x64/debug-static")
-			debugdir(PROJECT_DIRECTORY .. "/x64/debug-static")
-			objdir("!" .. PROJECT_DIRECTORY .. "/x64/debug-static/intermediate/%{prj.name}")
 
 	project("Testing")
 		uuid("A9FBF5DC-08A5-1840-9169-FA049E25EBA7")
@@ -212,33 +175,33 @@ solution("MultiLibrary")
 		filter("options:not glew-linking=dynamic")
 			defines("GLEW_STATIC")
 
-		filter({"system:windows", "configurations:Debug (static) or Release (static)"})
+		filter({"system:windows", "configurations:DebugStatic or ReleaseStatic"})
 			links({"avcodec", "avformat", "avutil", "swscale", "swresample", "openal32", "ws2_32", "opengl32", "gdi32"})
 
-			filter({"system:windows", "configurations:Debug (static)", "options:not glew-linking=compile"})
+			filter({"system:windows", "configurations:DebugStatic", "options:not glew-linking=compile"})
 				links("glew32d")
 
-			filter({"system:windows", "configurations:Release (static)", "options:not glew-linking=compile"})
+			filter({"system:windows", "configurations:ReleaseStatic", "options:not glew-linking=compile"})
 				links("glew32")
 
 		filter({"system:windows", "configurations:Debug or Release"})
 			links("opengl32")
 
-		filter({"system:linux", "configurations:Debug (static) or Release (static)"})
+		filter({"system:linux", "configurations:DebugStatic or ReleaseStatic"})
 			pkg_config({"--cflags", "--libs", "x11", "gl", "openal", "libavcodec", "libavformat", "libavutil", "libswscale", "libswresample"})
 			links("pthread")
 
-			filter({"system:linux", "configurations:Debug (static) or Release (static)", "options:not glew-linking=compile"})
+			filter({"system:linux", "configurations:DebugStatic or ReleaseStatic", "options:not glew-linking=compile"})
 				pkg_config({"--cflags", "--libs", "glew"})
 
 		filter({"system:linux", "configurations:Debug or Release"})
 			pkg_config({"--cflags", "--libs", "gl"})
 			links("pthread")
 
-		filter({"system:macosx", "configurations:Debug (static) or Release (static)"})
+		filter({"system:macosx", "configurations:DebugStatic or ReleaseStatic"})
 			links({"pthread", "avcodec", "avformat", "avutil", "swscale", "swresample", "OpenAL.framework", "OpenGL.framework"})
 
-			filter({"system:macosx", "configurations:Debug (static) or Release (static)", "options:not glew-linking=compile"})
+			filter({"system:macosx", "configurations:DebugStatic or ReleaseStatic", "options:not glew-linking=compile"})
 				links("GLEW")
 
 		filter({"system:macosx", "configurations:Debug or Release"})
