@@ -2,29 +2,9 @@ if not _ACTION then
 	error("no action defined")
 end
 
-newoption({
-	trigger = "static-runtime",
-	description = "Force the use of the static C runtime (only works with static builds)"
-})
-
-newoption({
-	trigger = "glew-linking",
-	description = "Linking strategy with GLEW",
-	value = "VALUE",
-	default = "compile",
-	allowed = {
-		{"static", "Statically links against GLEW"},
-		{"dynamic", "Dynamically links with GLEW"},
-		{"compile", "Compiles GLEW from source code"}
-	}
-})
-
-newoption({
-	trigger = "thirdparty-directory",
-	description = "Path to third-party libraries, useful mostly for Windows",
-	value = "PATH",
-	default = "thirdparty"
-})
+include("./scripts/options.lua")
+include("./scripts/actions.lua")
+include("./scripts/pkg_config.lua")
 
 SOURCE_DIRECTORY = "source"
 INCLUDE_DIRECTORY = "include"
@@ -32,74 +12,10 @@ THIRDPARTY_ROOT_DIRECTORY = _OPTIONS["thirdparty-directory"]
 THIRDPARTY_DIRECTORY = THIRDPARTY_ROOT_DIRECTORY .. "/" .. os.target()
 PROJECT_DIRECTORY = "projects/" .. os.target() .. "/" .. _ACTION
 
-if _ACTION == "clean" then
-	local rmfmt = "rmdir /s /q \"" .. _MAIN_SCRIPT_DIR .. "/%s\""
-	if not os.ishost("windows") then
-		rmfmt = "rm -rf \"" .. _MAIN_SCRIPT_DIR .. "/%s\""
-	end
-
-	local dirs = os.matchdirs("projects/" .. os.target() .. "/*")
-	for _, dir in pairs(dirs) do
-		os.outputof(rmfmt:format(dir))
-	end
-
-	return
-end
-
-local pkg_config_parsers = {
-	l = function(lib)
-		links(lib)
-	end,
-	L = function(libsdir)
-		libdirs(libsdir)
-	end,
-	I = function(incdir)
-		includedirs(incdir)
-	end,
-	D = function(define)
-		defines(define)
-	end
-}
-
-local function pkg_config(cmds)
-	local shouldlink = false
-	local libs = {}
-	for i = 1, #cmds do
-		if cmds[i] == "--libs" then
-			shouldlink = true
-		elseif cmds[i]:sub(1, 1) ~= "-" then
-			table.insert(libs, cmds[i]:match("^lib(.+)$") or cmds[i])
-		end
-	end
-
-	if shouldlink then
-		links(libs)
-	end
-end
-
-local version = os.outputof("pkg-config --version")
-if version and version ~= "" and version ~= "'pkg-config' is not recognized as an internal or external command,\noperable program or batch file." then
-	pkg_config = function(cmds)
-		local output = os.outputof("pkg-config --silence-errors " .. table.concat(cmds, " "))
-		if output and output ~= "" then
-			for w in output:gmatch("%S+") do
-				local l = w:sub(2, 2)
-				if w:sub(1, 1) == "-" and pkg_config_parsers[l] then
-					pkg_config_parsers[l](w:sub(3))
-				else
-					print("unrecognized pkg-config output '" .. w .. "'")
-				end
-			end
-		end
-	end
-else
-	print("pkg-config doesn't exist, going with the default behavior of premake links")
-end
-
 solution("MultiLibrary")
 	uuid("8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942")
 	language("C++")
-	cppdialect("C++11")
+	cppdialect("C++14")
 	location(PROJECT_DIRECTORY)
 	warnings("Extra")
 	flags("NoPCH")
@@ -122,7 +38,7 @@ solution("MultiLibrary")
 
 	filter("system:windows")
 		defines({"UNICODE", "_UNICODE", "WIN32_LEAN_AND_MEAN", "WINVER=0x0601", "_WIN32_WINNT=0x0601", "_CRT_SECURE_NO_DEPRECATE"})
-		includedirs(THIRDPARTY_DIRECTORY .. "/include")
+		sysincludedirs(THIRDPARTY_DIRECTORY .. "/include")
 
 		filter({"system:windows", "platforms:x86"})
 			libdirs(THIRDPARTY_DIRECTORY .. "/lib/x86")
@@ -131,10 +47,10 @@ solution("MultiLibrary")
 			libdirs(THIRDPARTY_DIRECTORY .. "/lib/x64")
 
 	filter("system:linux")
-		includedirs(THIRDPARTY_DIRECTORY .. "/include")
+		sysincludedirs(THIRDPARTY_DIRECTORY .. "/include")
 
 	filter("system:macosx")
-		includedirs(THIRDPARTY_DIRECTORY .. "/include")
+		sysincludedirs(THIRDPARTY_DIRECTORY .. "/include")
 
 	filter("configurations:Release")
 		optimize("On")

@@ -1,0 +1,3 @@
+[submodule "scripts/premake-export-compile-commands"]
+	path = scripts/premake-export-compile-commands
+	url = https://github.com/danielga/premake-export-compile-commands.git
