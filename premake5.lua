@@ -18,7 +18,7 @@ solution("MultiLibrary")
 	cppdialect("C++14")
 	location(PROJECT_DIRECTORY)
 	warnings("Extra")
-	flags("NoPCH")
+	flags({"NoPCH", "ShadowedVariables", "UndefinedIdentifiers"})
 	characterset("Unicode")
 	platforms({"x86", "x64"})
 	configurations({"Release", "Debug", "ReleaseStatic", "DebugStatic"})
@@ -33,18 +33,16 @@ solution("MultiLibrary")
 	filter("platforms:x64")
 		architecture("x64")
 
-	filter("options:static-runtime")
-		staticruntime("On")
-
 	filter("system:windows")
+		flags("MultiProcessorCompile")
 		defines({"UNICODE", "_UNICODE", "WIN32_LEAN_AND_MEAN", "WINVER=0x0601", "_WIN32_WINNT=0x0601", "_CRT_SECURE_NO_DEPRECATE"})
 		sysincludedirs(THIRDPARTY_DIRECTORY .. "/include")
 
 		filter({"system:windows", "platforms:x86"})
-			libdirs(THIRDPARTY_DIRECTORY .. "/lib/x86")
+			syslibdirs(THIRDPARTY_DIRECTORY .. "/lib/x86")
 
 		filter({"system:windows", "platforms:x64"})
-			libdirs(THIRDPARTY_DIRECTORY .. "/lib/x64")
+			syslibdirs(THIRDPARTY_DIRECTORY .. "/lib/x64")
 
 	filter("system:linux")
 		sysincludedirs(THIRDPARTY_DIRECTORY .. "/include")
@@ -54,25 +52,33 @@ solution("MultiLibrary")
 
 	filter("configurations:Release")
 		optimize("On")
-		vectorextensions("SSE2")
+		symbols("On")
 		kind("SharedLib")
+
+		filter({"configurations:Release", "system:linux or macosx"})
+			debugformat("SplitDwarf")
 
 	filter("configurations:Debug")
 		defines("MULTILIBRARY_DEBUG")
+		optimize("Off")
 		symbols("On")
 		kind("SharedLib")
 
 	filter("configurations:ReleaseStatic")
 		defines("MULTILIBRARY_STATIC")
 		optimize("On")
-		vectorextensions("SSE2")
+		symbols("On")
 		kind("StaticLib")
 
 		filter({"configurations:ReleaseStatic", "options:static-runtime"})
 			staticruntime("On")
 
+		filter({"configurations:ReleaseStatic", "system:linux or macosx"})
+			debugformat("SplitDwarf")
+
 	filter("configurations:DebugStatic")
 		defines({"MULTILIBRARY_DEBUG", "MULTILIBRARY_STATIC"})
+		optimize("Off")
 		symbols("On")
 		kind("StaticLib")
 
@@ -90,6 +96,9 @@ solution("MultiLibrary")
 
 		filter("options:not glew-linking=dynamic")
 			defines("GLEW_STATIC")
+
+		filter("options:glew-linking=compile")
+			links("glew")
 
 		filter({"system:windows", "configurations:DebugStatic or ReleaseStatic"})
 			links({"avcodec", "avformat", "avutil", "swscale", "swresample", "openal32", "ws2_32", "opengl32", "gdi32"})
@@ -115,7 +124,11 @@ solution("MultiLibrary")
 			links("pthread")
 
 		filter({"system:macosx", "configurations:DebugStatic or ReleaseStatic"})
-			links({"pthread", "avcodec", "avformat", "avutil", "swscale", "swresample", "OpenAL.framework", "OpenGL.framework"})
+			-- Requires XQuartz
+			sysincludedirs("/opt/X11/include")
+			syslibdirs("/opt/X11/lib")
+
+			links({"pthread", "avcodec", "avformat", "avutil", "swscale", "swresample", "OpenAL.framework", "GL", "X11"})
 
 			filter({"system:macosx", "configurations:DebugStatic or ReleaseStatic", "options:not glew-linking=compile"})
 				links("GLEW")
@@ -396,4 +409,7 @@ solution("MultiLibrary")
 				vpaths({["Source files"] = THIRDPARTY_ROOT_DIRECTORY .. "/src/**.c"})
 				sysincludedirs(THIRDPARTY_ROOT_DIRECTORY .. "/include")
 				files(THIRDPARTY_ROOT_DIRECTORY .. "/src/glew.c")
+
+				filter("system:macosx")
+					defines("GLEW_APPLE_GLX")
 		end

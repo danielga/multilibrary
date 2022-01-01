@@ -34,11 +34,131 @@
  *************************************************************************/
 
 #include <MultiLibrary/Common/Process.hpp>
-
+#include <system_error>
+#include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 namespace MultiLibrary
 {
 
+class Process::Handle
+{
+public:
+	Handle( pid_t proc ) :
+		internal( proc )
+	{ }
 
+	operator pid_t( ) const
+	{
+		return internal;
+	}
+
+private:
+	pid_t internal;
+};
+
+Process::Process( const std::string &path, const std::vector<std::string> &args ) :
+	exit_code( 0 ),
+	input_pipe( true, false ),
+	output_pipe( false, true ),
+	error_pipe( false, true )
+{
+	char **argv = nullptr;
+	if( !args.empty( ) )
+	{
+		argv = new char *[args.size( ) + 2];
+		argv[0] = const_cast<char *>( path.c_str( ) );
+		for( size_t i = 1; i < args.size( ) + 1; ++i )
+			argv[i] = const_cast<char *>( args[i].c_str( ) );
+
+		argv[args.size( )] = nullptr;
+	}
+
+	pid_t pid = fork( );
+	if( pid == 0 && execv( path.c_str( ), argv ) )
+	{
+		delete [] argv;
+		exit( EXIT_FAILURE );
+	}
+
+	delete [] argv;
+
+	if( pid == -1 )
+		throw std::system_error( errno, std::system_category( ), "failed to fork process" );
+
+	process.reset( new Handle( pid ) );
+}
+
+Process::~Process( )
+{
+	Close( );
+}
+
+Process::Status Process::GetStatus( ) const
+{
+	if( !process )
+		return Status::Unknown;
+
+	int status = 0;
+	if( waitpid( *process, &status, WNOHANG ) )
+		return WIFEXITED( status ) ? Status::Terminated : Status::Running;
+
+	return Status::Unknown;
+}
+
+bool Process::Close( )
+{
+	if( !process )
+		return false;
+
+	int status = 0;
+	if( waitpid( *process, &status, 0 ) > 0 )
+	{
+		process.reset( );
+		return WIFEXITED( status );
+	}
+
+	process.reset( );
+	return false;
+}
+
+void Process::Kill( )
+{
+	if( !process )
+		return;
+
+	kill( *process, 0 );
+	waitpid( *process, nullptr, 0 );
+	process.reset( );
+}
+
+void Process::CloseInput( )
+{
+	input_pipe.CloseWrite( );
+}
+
+Pipe &Process::Input( )
+{
+	return input_pipe;
+}
+
+Pipe &Process::Output( )
+{
+	return output_pipe;
+}
+
+Pipe &Process::Error( )
+{
+	return error_pipe;
+}
+
+int32_t Process::ExitCode( ) const
+{
+	return exit_code;
+}
 
 } // namespace MultiLibrary

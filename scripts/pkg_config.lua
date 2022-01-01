@@ -9,7 +9,7 @@ local pkg_config_parsers = {
 		links(lib)
 	end,
 	L = function(libsfolder)
-		libdirs(libsfolder)
+		syslibdirs(libsfolder)
 	end,
 	I = function(incfolder)
 		sysincludedirs(incfolder)

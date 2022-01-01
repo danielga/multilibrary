@@ -63,16 +63,6 @@ String::String( const std::wstring &str )
 	UTF8::FromWideString( str.begin( ), str.end( ), std::back_inserter( utf8_string ) );
 }
 
-String::String( const String &str ) :
-	utf8_string( str.utf8_string )
-{ }
-
-String &String::operator=( const String &str )
-{
-	utf8_string = str.utf8_string;
-	return *this;
-}
-
 String &String::operator+=( const String &str )
 {
 	utf8_string += str.utf8_string;

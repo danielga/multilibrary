@@ -39,16 +39,6 @@
 #include <cstdarg>
 #include <sys/stat.h>
 
-#if defined _WIN32 && !defined __GNUC__
-
-	#define ftello64 _ftelli64
-	#define stat64 _stat64
-	#define fstat64 _fstat64
-	#define fseeko64 _fseeki64
-	#define fileno _fileno
-
-#endif
-
 namespace MultiLibrary
 {
 
@@ -84,19 +74,63 @@ const std::string &FileSimple::GetPath( ) const
 
 int64_t FileSimple::Tell( ) const
 {
+
+#if defined _WIN32 && !defined __GNUC__
+
+	return _ftelli64( static_cast<FILE *>( file_pointer ) );
+
+#elif defined __APPLE__
+
+	return ftello( static_cast<FILE *>( file_pointer ) );
+
+#else
+
 	return ftello64( static_cast<FILE *>( file_pointer ) );
+
+#endif
+
 }
 
 int64_t FileSimple::Size( ) const
 {
+
+#if defined _WIN32 && !defined __GNUC__
+
+	struct _stat64 stats;
+	_fstat64( _fileno( static_cast<FILE *>( file_pointer ) ), &stats );
+
+#elif defined __APPLE__
+
+	struct stat stats;
+	fstat( fileno( static_cast<FILE *>( file_pointer ) ), &stats );
+
+#else
+
 	struct stat64 stats;
 	fstat64( fileno( static_cast<FILE *>( file_pointer ) ), &stats );
+
+#endif
+
 	return stats.st_size;
 }
 
 bool FileSimple::Seek( int64_t pos, SeekMode mode )
 {
+
+#if defined _WIN32 && !defined __GNUC__
+
+	return _fseeki64( static_cast<FILE *>( file_pointer ), pos, static_cast<int32_t>( mode ) ) == 0;
+
+#elif defined __APPLE__
+
+	return fseeko( static_cast<FILE *>( file_pointer ), pos, static_cast<int32_t>( mode ) ) == 0;
+
+#else
+
 	return fseeko64( static_cast<FILE *>( file_pointer ), pos, static_cast<int32_t>( mode ) ) == 0;
+
+#endif
+
 }
 
 bool FileSimple::Flush( )

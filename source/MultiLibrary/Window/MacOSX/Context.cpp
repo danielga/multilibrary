@@ -33,7 +33,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *************************************************************************/
 
-#include <MultiLibrary/Window/Linux/Context.hpp>
+#include <MultiLibrary/Window/MacOSX/Context.hpp>
 #include <MultiLibrary/Window/VideoMode.hpp>
 #include <MultiLibrary/Window/Window.hpp>
 #include <stdexcept>

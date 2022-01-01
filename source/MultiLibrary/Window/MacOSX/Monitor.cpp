@@ -33,79 +33,130 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *************************************************************************/
 
-#pragma once
-
-#include <MultiLibrary/Network/Export.hpp>
-#include <memory>
-#include <string>
-
-struct sockaddr;
-struct sockaddr_storage;
-struct sockaddr_in;
-struct sockaddr_in6;
+#include <MultiLibrary/Window/Monitor.hpp>
+#include <MultiLibrary/Common/Unicode.hpp>
 
 namespace MultiLibrary
 {
 
-enum IPAddressFamily
+struct Monitor::Handle
 {
-	FAMILY_INET = 2,
-	FAMILY_INET6 = 23
+	std::string name;
+	std::wstring widename;
+	Vector2i max_resolution;
 };
 
-class MULTILIBRARY_NETWORK_API IPAddress
+Monitor::Monitor( bool use_primary_monitor ) :
+	handle( nullptr )
 {
-public:
-	IPAddress( IPAddressFamily family = FAMILY_INET );
+	if( use_primary_monitor )
+	{
+		std::vector<Monitor> monitors = GetMonitors( );
+		if( monitors.size( ) > 0 )
+			handle.swap( monitors[0].handle );
+	}
+}
 
-	IPAddress( const std::string &address, uint16_t port );
+bool Monitor::IsValid( ) const
+{
+	return static_cast<bool>( handle );
+}
 
-	IPAddress( const sockaddr_in &address );
-	IPAddress( uint32_t address, uint16_t port );
-	IPAddress( const uint8_t address[4], uint16_t port );
+std::string Monitor::GetName( ) const
+{
+	if( !IsValid( ) )
+		return std::string( );
 
-	IPAddress( const sockaddr_in6 &address );
-	IPAddress( const uint16_t address[8], uint16_t port );
+	return handle->name;
+}
 
-	IPAddress( const IPAddress &address );
-	IPAddress( IPAddress &&address ) = default;
+Vector2i Monitor::GetPhysicalSize( ) const
+{
+	if( !IsValid( ) )
+		return Vector2i( );
 
-	IPAddress &operator=( const IPAddress &address );
-	IPAddress &operator=( IPAddress &&address ) = default;
+	return handle->max_resolution;
+}
 
-	void SetIPAddress( const sockaddr_in &address );
-	void SetIPAddress( const sockaddr_in6 &address );
+Vector2i Monitor::GetPosition( ) const
+{
+	Vector2i pos;
+	if( !IsValid( ) )
+		return pos;
 
-	void SetAddress( const std::string &address );
 
-	void SetAddress( uint32_t address );
-	void SetAddress( const uint8_t address[4] );
+	return pos;
+}
 
-	void SetAddress( const uint16_t address[8] );
+VideoMode Monitor::GetDesktopMode( ) const
+{
+	VideoMode mode;
+	if( !IsValid( ) )
+		return mode;
 
-	void SetPort( uint16_t port );
 
-	uint32_t GetAddress( ) const;
-	void GetAddress( uint8_t address[4] ) const;
+	return mode;
+}
 
-	void GetAddress( uint16_t address[8] ) const;
+std::vector<GammaColors> Monitor::GetGammaRamp( ) const
+{
+	std::vector<GammaColors> ramp;
+	if( !IsValid( ) )
+		return ramp;
 
-	uint16_t GetPort( ) const;
 
-	const sockaddr *ToSocketAddress( ) const;
-	sockaddr *GetSocketAddress( );
-	size_t GetAddressSize( ) const;
+	return ramp;
+}
 
-	std::string ToString( ) const;
+void Monitor::SetGamma( float gamma )
+{
+	if( !IsValid( ) || gamma <= 0.0f )
+		return;
 
-	void SetFamily( IPAddressFamily family );
-	IPAddressFamily GetFamily( ) const;
+	std::vector<GammaColors> gamma_ramp;
+	for( size_t i = 0; i < 256; ++i )
+	{
+		double value = pow( i / 255.0, 1.0 / gamma ) * 65535.0 + 0.5;
+		if( value > 65535.0 )
+			value = 65535.0;
 
-protected:
-	void InitializeAddress( );
-	bool ResolveString( const std::string &address );
+		uint16_t uvalue = static_cast<uint16_t>( value );
+		gamma_ramp.push_back( GammaColors( uvalue, uvalue, uvalue ) );
+	}
 
-	std::shared_ptr<sockaddr_storage> host_address;
-};
+	return SetGammaRamp( gamma_ramp );
+}
+
+void Monitor::SetGammaRamp( const std::vector<GammaColors> &gamma_ramp )
+{
+	if( !IsValid( ) || gamma_ramp.size( ) != 256 )
+		return;
+
+
+}
+
+std::vector<VideoMode> Monitor::GetFullscreenModes( ) const
+{
+	std::vector<VideoMode> video_modes;
+	if( !IsValid( ) )
+		return video_modes;
+
+
+	return video_modes;
+}
+
+const Monitor::Handle &Monitor::GetHandle( ) const
+{
+	return *handle;
+}
+
+std::vector<Monitor> Monitor::GetMonitors( )
+{
+	std::vector<Monitor> monitors;
+
+
+
+	return monitors;
+}
 
 } // namespace MultiLibrary

@@ -51,7 +51,7 @@ namespace MultiLibrary
 Filesystem::~Filesystem( )
 {
 	for( size_t k = 0; k < open_files.size( ); ++k )
-		CloseInternal( open_files[k] );
+		Close( open_files[k] );
 
 	open_files.clear( );
 }
@@ -59,19 +59,19 @@ Filesystem::~Filesystem( )
 File Filesystem::Open( const std::string &path, const char *mode )
 {
 	FILE *file = fopen( path.c_str( ), mode );
-	if( file == NULL )
-		return File( NULL );
+	if( file == nullptr )
+		return File( std::shared_ptr<FileInternal>( ) );
 
 	FileSimple *finternal = new FileSimple( this, file, path );
 	open_files.push_back( finternal );
-	return File( finternal );
+	return File( std::shared_ptr<FileInternal>( finternal ) );
 }
 
 int64_t Filesystem::Size( const std::string &path )
 {
-	struct stat64 stat;
-	if( stat64( path.c_str( ), &stat ) == 0 )
-		return stat.st_size;
+	struct stat stats;
+	if( stat( path.c_str( ), &stats ) == 0 )
+		return stats.st_size;
 
 	return -1;
 }
@@ -81,18 +81,6 @@ bool Filesystem::Exists( const std::string &path )
 	File file = Open( path, "r" );
 	if( file.IsValid( ) )
 	{
-		file.Close( );
-		return true;
-	}
-
-	return false;
-}
-
-bool Filesystem::CreateFile( const std::string &path, bool overwrite )
-{
-	if( overwrite || !Exists( path ) )
-	{
-		File file = Open( path, "w" );
 		file.Close( );
 		return true;
 	}
@@ -137,11 +125,11 @@ uint64_t Filesystem::Find( const std::string &find, std::vector<std::string> &fi
 
 bool Filesystem::IsFolder( const std::string &path )
 {
-	struct stat64 stat;
-	if( stat64( path.c_str( ), &stat ) != 0 )
+	struct stat stats;
+	if( stat( path.c_str( ), &stats ) != 0 )
 		return false;
 
-	return ( stat.st_mode & S_IFMT ) == S_IFDIR;
+	return ( stats.st_mode & S_IFMT ) == S_IFDIR;
 }
 
 bool Filesystem::CreateFolder( const std::string &path )
@@ -187,18 +175,16 @@ std::string Filesystem::GetExecutablePath( )
 	return execPath;
 }
 
-bool Filesystem::CloseInternal( const FileInternal *f )
+bool Filesystem::Close( FileInternal *file )
 {
-	if( f == NULL )
+	if( file == nullptr )
 		return false;
 
 	std::vector<FileInternal *>::iterator it, end = open_files.end( );
 	for( it = open_files.begin( ); it != end; ++it )
-		if( *it == f )
+		if( *it == file )
 		{
-			FileSimple *file = static_cast<FileSimple *>( *it );
-			fclose( static_cast<FILE *>( file->file_pointer ) );
-			delete file;
+			fclose( static_cast<FILE *>( file->Release( ) ) );
 			open_files.erase( it );
 			return true;
 		}

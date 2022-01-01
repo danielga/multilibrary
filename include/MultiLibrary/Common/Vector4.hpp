@@ -37,6 +37,7 @@
 
 #include <MultiLibrary/Common/Export.hpp>
 #include <stdexcept>
+#include <cmath>
 
 namespace MultiLibrary
 {

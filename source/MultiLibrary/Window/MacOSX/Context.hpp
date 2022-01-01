@@ -35,32 +35,29 @@
 
 #pragma once
 
-#include <MultiLibrary/Media/Export.hpp>
-#include <string>
-#include <vector>
+#include <MultiLibrary/Window/Export.hpp>
+#include <MultiLibrary/Common/NonCopyable.hpp>
+#include <GL/glew.h>
+#include <GL/glxew.h>
 
 namespace MultiLibrary
 {
 
-class MULTILIBRARY_MEDIA_API AudioDevice
+struct WindowSettings;
+
+class MULTILIBRARY_WINDOW_API Context : public NonCopyable
 {
 public:
-	AudioDevice( );
-	AudioDevice( const std::string &devname );
-	~AudioDevice( );
+	Context( Display *display, GLXDrawable window, const WindowSettings &window_setup );
+	~Context( );
 
-	void OpenDevice( );
-	void OpenDevice( const std::string &devname );
-	void CloseDevice( );
+	bool SetActive( bool active = true );
+	bool IsActive( ) const;
 
-	void MakeCurrent( );
-
-	static std::vector<std::string> GetAudioDevices( );
-	static int32_t GetFormatFromChannelCount( uint32_t numChannels );
-
-private:
-	void *openal_device;
-	void *openal_context;
+	Display *display_handle;
+	GLXDrawable window_handle;
+	XVisualInfo *visual_info;
+	GLXContext context_handle;
 };
 
 } // namespace MultiLibrary

@@ -520,8 +520,18 @@ bool MediaDecoder::InternalOpen( const std::string &filename )
 					channel_layout, static_cast<AVSampleFormat>( codec_parameters->format ),
 					codec_parameters->sample_rate, 0, nullptr
 				);
+				if( swr_context == nullptr )
+				{
+					avcodec_free_context( &stream_codecs[i] );
+					continue;
+				}
 
-				swr_init( swr_context );
+				if( swr_init( swr_context ) < 0 )
+				{
+					swr_free( &swr_context );
+					avcodec_free_context( &stream_codecs[i] );
+					continue;
+				}
 			}
 			else if( media_type == AVMEDIA_TYPE_VIDEO )
 			{
@@ -543,8 +553,18 @@ bool MediaDecoder::InternalOpen( const std::string &filename )
 					codec_parameters->width, codec_parameters->height, AV_PIX_FMT_RGBA,
 					0, nullptr, nullptr, nullptr
 				);
+				if( sws_context == nullptr )
+				{
+					avcodec_free_context( &stream_codecs[i] );
+					continue;
+				}
 
-				sws_init_context( sws_context, nullptr, nullptr );
+				if( sws_init_context( sws_context, nullptr, nullptr ) < 0 )
+				{
+					sws_freeContext( sws_context );
+					avcodec_free_context( &stream_codecs[i] );
+					continue;
+				}
 			}
 
 			useful_stream = true;

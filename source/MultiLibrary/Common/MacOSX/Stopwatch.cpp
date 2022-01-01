@@ -45,7 +45,7 @@ Stopwatch::Stopwatch( ) :
 	elapsed_time( 0.0 ),
 	running( false )
 {
-	if( frequency == 0.0 )
+	if( update_frequency == 0.0 )
 	{
 		mach_timebase_info_data_t timebaseInfo;
 		mach_timebase_info( &timebaseInfo );

@@ -50,9 +50,12 @@ public:
 	explicit String( const wchar_t *str );
 	explicit String( const std::string &str );
 	explicit String( const std::wstring &str );
-	explicit String( const String &str );
+	String( const String &str ) = default;
+	String( String &&str ) = default;
 
-	String &operator=( const String &str );
+	String &operator=( const String &str ) = default;
+	String &operator=( String &&str ) = default;
+
 	String &operator+=( const String &str );
 
 	template<typename Input> static String FromANSI( Input begin, Input end );

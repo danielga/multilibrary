@@ -65,7 +65,7 @@ void AudioDevice::OpenDevice( )
 	if( ( openal_device = alcOpenDevice( nullptr ) ) == nullptr )
 		return;
 
-	if( ( openal_context = alcCreateContext( openal_device, nullptr ) ) == nullptr )
+	if( ( openal_context = alcCreateContext( static_cast<ALCdevice *>( openal_device ), nullptr ) ) == nullptr )
 		return;
 
 	MakeCurrent( );
@@ -78,7 +78,7 @@ void AudioDevice::OpenDevice( const std::string &devname )
 	if( ( openal_device = alcOpenDevice( devname.c_str( ) ) ) == nullptr )
 		return;
 
-	if( ( openal_context = alcCreateContext( openal_device, nullptr ) ) == nullptr )
+	if( ( openal_context = alcCreateContext( static_cast<ALCdevice *>( openal_device ), nullptr ) ) == nullptr )
 		return;
 
 	MakeCurrent( );
@@ -91,13 +91,13 @@ void AudioDevice::CloseDevice( )
 		if( alcGetCurrentContext( ) == openal_context )
 			alcMakeContextCurrent( nullptr );
 
-		alcDestroyContext( openal_context );
+		alcDestroyContext( static_cast<ALCcontext *>( openal_context ) );
 		openal_context = nullptr;
 	}
 
 	if( openal_device != nullptr )
 	{
-		alcCloseDevice( openal_device );
+		alcCloseDevice( static_cast<ALCdevice *>( openal_device ) );
 		openal_device = nullptr;
 	}
 }
@@ -105,7 +105,7 @@ void AudioDevice::CloseDevice( )
 void AudioDevice::MakeCurrent( )
 {
 	if( openal_context != nullptr )
-		alCheck( alcMakeContextCurrent( openal_context ) );
+		alCheck( alcMakeContextCurrent( static_cast<ALCcontext *>( openal_context ) ) );
 }
 
 std::vector<std::string> AudioDevice::GetAudioDevices( )

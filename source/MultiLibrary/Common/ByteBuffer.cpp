@@ -103,8 +103,8 @@ bool ByteBuffer::Seek( size_t position )
 bool ByteBuffer::Seek( int64_t position, SeekMode mode )
 {
 	assert( mode != SeekMode::Set || ( mode == SeekMode::Set && position >= 0 ) );
-	assert( mode != SeekMode::Cur || ( mode == SeekMode::Cur && Tell( ) + position >= 0 ) );
-	assert( mode != SeekMode::End || ( mode == SeekMode::End && Size( ) + position >= 0 ) );
+	assert( mode != SeekMode::Cur || ( mode == SeekMode::Cur && Tell( ) + position > 0 ) );
+	assert( mode != SeekMode::End || ( mode == SeekMode::End && Size( ) + position > 0 ) );
 
 	int64_t temp;
 	switch( mode )

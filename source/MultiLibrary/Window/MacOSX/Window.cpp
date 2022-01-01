@@ -34,7 +34,7 @@
  *************************************************************************/
 
 #include <MultiLibrary/Window/Window.hpp>
-#include <MultiLibrary/Window/Linux/Context.hpp>
+#include <MultiLibrary/Window/MacOSX/Context.hpp>
 #include <MultiLibrary/Common/Unicode.hpp>
 #include <stdexcept>
 #include <cstring>

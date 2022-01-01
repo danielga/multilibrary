@@ -25,7 +25,7 @@ case "$(uname -s)" in
         ;;
     Darwin*)
 		brew update
-		brew install ffmpeg openal-soft
+		brew install ffmpeg openal-soft xquartz
         ;;
     *)
         echo "Unknown operating system"

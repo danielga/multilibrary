@@ -54,7 +54,7 @@ static Input Decode( Input begin, Input end, uint32_t &output, uint32_t replace 
 		trailingBytes = 3;
 	else if( ch < 252 )
 		trailingBytes = 4;
-	else if( ch < 256 )
+	else
 		trailingBytes = 5;
 
 	if( begin + trailingBytes < end )
@@ -66,26 +66,31 @@ static Input Decode( Input begin, Input end, uint32_t &output, uint32_t replace 
 			output += static_cast<uint8_t>( *begin );
 			++begin;
 			output <<= 6;
+			// fall through
 
 		case 4:
 			output += static_cast<uint8_t>( *begin );
 			++begin;
 			output <<= 6;
+			// fall through
 
 		case 3:
 			output += static_cast<uint8_t>( *begin );
 			++begin;
 			output <<= 6;
+			// fall through
 
 		case 2:
 			output += static_cast<uint8_t>( *begin );
 			++begin;
 			output <<= 6;
+			// fall through
 
 		case 1:
 			output += static_cast<uint8_t>( *begin );
 			++begin;
 			output <<= 6;
+			// fall through
 
 		case 0:
 			output += static_cast<uint8_t>( *begin );
@@ -134,14 +139,17 @@ static Output Encode( uint32_t input, Output output, uint8_t replace )
 		case 4:
 			bytes[3] = static_cast<uint8_t>( ( input | 0x80 ) & 0xBF );
 			input >>= 6;
+			// fall through
 
 		case 3:
 			bytes[2] = static_cast<uint8_t>( ( input | 0x80 ) & 0xBF );
 			input >>= 6;
+			// fall through
 
 		case 2:
 			bytes[1] = static_cast<uint8_t>( ( input | 0x80 ) & 0xBF );
 			input >>= 6;
+			// fall through
 
 		case 1:
 			bytes[0] = static_cast<uint8_t>( input | firstBytes[bytestoWrite] );

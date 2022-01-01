@@ -51,6 +51,12 @@
 	#include <netinet/in.h>
 	#include <sys/socket.h>
 	#include <arpa/inet.h>
+
+#if defined __APPLE__
+
+#define s6_addr16 __u6_addr.__u6_addr16
+
+#endif
 	
 #endif
 
@@ -77,80 +83,74 @@ template<typename T> static void NetworkCopy( T *dst, const T *src, size_t len )
 
 } // namespace Internal
 
-IPAddress::IPAddress( IPAddressFamily family ) :
-	host_address( nullptr )
+IPAddress::IPAddress( IPAddressFamily family )
 {
 	InitializeAddress( );
 	SetFamily( family );
 }
 
-IPAddress::IPAddress( const std::string &address, uint16_t port ) :
-	host_address( nullptr )
+IPAddress::IPAddress( const std::string &address, uint16_t port )
 {
 	InitializeAddress( );
 	ResolveString( address );
 	SetPort( port );
 }
 
-IPAddress::IPAddress( const sockaddr_in &address ) :
-	host_address( nullptr )
+IPAddress::IPAddress( const sockaddr_in &address )
 {
 	InitializeAddress( );
 	SetIPAddress( address );
 }
 
-IPAddress::IPAddress( uint32_t address, uint16_t port ) :
-	host_address( nullptr )
+IPAddress::IPAddress( uint32_t address, uint16_t port )
 {
 	InitializeAddress( );
 	SetAddress( address );
 	SetPort( port );
 }
 
-IPAddress::IPAddress( const uint8_t address[4], uint16_t port ) :
-	host_address( nullptr )
+IPAddress::IPAddress( const uint8_t address[4], uint16_t port )
 {
 	InitializeAddress( );
 	SetAddress( address );
 	SetPort( port );
 }
 
-IPAddress::IPAddress( const sockaddr_in6 &address ) :
-	host_address( nullptr )
+IPAddress::IPAddress( const sockaddr_in6 &address )
 {
 	InitializeAddress( );
 	SetIPAddress( address );
 }
 
-IPAddress::IPAddress( const uint16_t address[8], uint16_t port ) :
-	host_address( nullptr )
+IPAddress::IPAddress( const uint16_t address[8], uint16_t port )
 {
 	InitializeAddress( );
 	SetAddress( address );
 	SetPort( port );
 }
 
-IPAddress::~IPAddress( )
+IPAddress::IPAddress( const IPAddress &address )
 {
-	delete host_address;
+	InitializeAddress( );
+	std::memcpy( host_address.get( ), address.host_address.get( ), sizeof( sockaddr_storage ) );
 }
 
 IPAddress &IPAddress::operator=( const IPAddress &address )
 {
-	std::memcpy( host_address, address.host_address, sizeof( sockaddr_storage ) );
+	std::memcpy( host_address.get( ), address.host_address.get( ), sizeof( sockaddr_storage ) );
 	return *this;
 }
 
 void IPAddress::SetIPAddress( const sockaddr_in &address )
 {
 	SetFamily( FAMILY_INET );
-	std::memcpy( host_address, &address, sizeof( sockaddr_in ) );
+	std::memcpy( host_address.get( ), &address, sizeof( sockaddr_in ) );
 }
 
 void IPAddress::SetIPAddress( const sockaddr_in6 &address )
 {
 	SetFamily( FAMILY_INET6 );
-	std::memcpy( host_address, &address, sizeof( sockaddr_in6 ) );
+	std::memcpy( host_address.get( ), &address, sizeof( sockaddr_in6 ) );
 }
 
 void IPAddress::SetAddress( const std::string &address )
@@ -161,20 +161,20 @@ void IPAddress::SetAddress( const std::string &address )
 void IPAddress::SetAddress( uint32_t address )
 {
 	SetFamily( FAMILY_INET );
-	reinterpret_cast<sockaddr_in *>( host_address )->sin_addr.s_addr = htonl( address );
+	reinterpret_cast<sockaddr_in *>( host_address.get( ) )->sin_addr.s_addr = htonl( address );
 }
 
 void IPAddress::SetAddress( const uint8_t address[4] )
 {
 	SetFamily( FAMILY_INET );
 	uint32_t haddress = ( address[0] << 24 ) | ( address[1] << 16 ) | ( address[2] << 8 ) | address[3];
-	reinterpret_cast<sockaddr_in *>( host_address )->sin_addr.s_addr = htonl( haddress );
+	reinterpret_cast<sockaddr_in *>( host_address.get( ) )->sin_addr.s_addr = htonl( haddress );
 }
 
 void IPAddress::SetAddress( const uint16_t address[8] )
 {
 	SetFamily( FAMILY_INET6 );
-	sockaddr_in6 *haddress = reinterpret_cast<sockaddr_in6 *>( host_address );
+	sockaddr_in6 *haddress = reinterpret_cast<sockaddr_in6 *>( host_address.get( ) );
 	Internal::NetworkCopy( reinterpret_cast<uint16_t *>( &haddress->sin6_addr.s6_addr16 ), address, 8 );
 }
 
@@ -183,29 +183,29 @@ void IPAddress::SetPort( uint16_t port )
 	switch( GetFamily( ) )
 	{
 	case FAMILY_INET:
-		reinterpret_cast<sockaddr_in *>( host_address )->sin_port = htons( port );
+		reinterpret_cast<sockaddr_in *>( host_address.get( ) )->sin_port = htons( port );
 		break;
 
 	case FAMILY_INET6:
-		reinterpret_cast<sockaddr_in6 *>( host_address )->sin6_port = htons( port );
+		reinterpret_cast<sockaddr_in6 *>( host_address.get( ) )->sin6_port = htons( port );
 		break;
 	}
 }
 
 uint32_t IPAddress::GetAddress( ) const
 {
-	return ntohl( reinterpret_cast<sockaddr_in *>( host_address )->sin_addr.s_addr );
+	return ntohl( reinterpret_cast<sockaddr_in *>( host_address.get( ) )->sin_addr.s_addr );
 }
 
 void IPAddress::GetAddress( uint8_t address[4] ) const
 {
-	sockaddr_in *haddress = reinterpret_cast<sockaddr_in *>( host_address );
+	sockaddr_in *haddress = reinterpret_cast<sockaddr_in *>( host_address.get( ) );
 	Internal::NetworkCopy( address, reinterpret_cast<uint8_t *>( &haddress->sin_addr.s_addr ), 4 );
 }
 
 void IPAddress::GetAddress( uint16_t address[8] ) const
 {
-	sockaddr_in6 *haddress = reinterpret_cast<sockaddr_in6 *>( host_address );
+	sockaddr_in6 *haddress = reinterpret_cast<sockaddr_in6 *>( host_address.get( ) );
 	Internal::NetworkCopy( address, reinterpret_cast<uint16_t *>( &haddress->sin6_addr.s6_addr16 ), 8 );
 }
 
@@ -214,10 +214,10 @@ uint16_t IPAddress::GetPort( ) const
 	switch( GetFamily( ) )
 	{
 	case FAMILY_INET:
-		return ntohs( reinterpret_cast<sockaddr_in *>( host_address )->sin_port );
+		return ntohs( reinterpret_cast<sockaddr_in *>( host_address.get( ) )->sin_port );
 
 	case FAMILY_INET6:
-		return ntohs( reinterpret_cast<sockaddr_in6 *>( host_address )->sin6_port );
+		return ntohs( reinterpret_cast<sockaddr_in6 *>( host_address.get( ) )->sin6_port );
 	}
 
 	return 0;
@@ -225,12 +225,12 @@ uint16_t IPAddress::GetPort( ) const
 
 const sockaddr *IPAddress::ToSocketAddress( ) const
 {
-	return reinterpret_cast<const sockaddr *>( host_address );
+	return reinterpret_cast<const sockaddr *>( host_address.get( ) );
 }
 
 sockaddr *IPAddress::GetSocketAddress( )
 {
-	return reinterpret_cast<sockaddr *>( host_address );
+	return reinterpret_cast<sockaddr *>( host_address.get( ) );
 }
 
 size_t IPAddress::GetAddressSize( ) const
@@ -259,7 +259,7 @@ std::string IPAddress::ToString( ) const
 
 			std::wstring waddress( INET_ADDRSTRLEN, L'\0' );
 			DWORD size = INET_ADDRSTRLEN;
-			if( WSAAddressToString( reinterpret_cast<sockaddr *>( host_address ), sizeof( sockaddr_in ), nullptr, &waddress[0], &size ) == 0 )
+			if( WSAAddressToString( reinterpret_cast<sockaddr *>( host_address.get( ) ), sizeof( sockaddr_in ), nullptr, &waddress[0], &size ) == 0 )
 			{
 				waddress.resize( size - 1 );
 				UTF8::FromWideString( waddress.begin( ), waddress.end( ), std::back_inserter( address ) );
@@ -269,7 +269,7 @@ std::string IPAddress::ToString( ) const
 #elif defined __APPLE__ || defined __linux
 
 			address.resize( INET_ADDRSTRLEN );
-			in_addr *haddress = &reinterpret_cast<sockaddr_in *>( host_address )->sin_addr;
+			in_addr *haddress = &reinterpret_cast<sockaddr_in *>( host_address.get( ) )->sin_addr;
 			if( inet_ntop( AF_INET, haddress, &address[0], INET_ADDRSTRLEN ) != nullptr )
 			{
 				address.resize( std::strlen( address.c_str( ) ) );
@@ -288,7 +288,7 @@ std::string IPAddress::ToString( ) const
 
 			std::wstring waddress( INET6_ADDRSTRLEN, L'\0' );
 			DWORD size = INET6_ADDRSTRLEN;
-			if( WSAAddressToString( reinterpret_cast<sockaddr *>( host_address ), sizeof( sockaddr_in6 ), nullptr, &waddress[0], &size ) == 0 )
+			if( WSAAddressToString( reinterpret_cast<sockaddr *>( host_address.get( ) ), sizeof( sockaddr_in6 ), nullptr, &waddress[0], &size ) == 0 )
 			{
 				waddress.resize( size - 1 );
 				UTF8::FromWideString( waddress.begin( ), waddress.end( ), std::back_inserter( address ) );
@@ -298,7 +298,7 @@ std::string IPAddress::ToString( ) const
 #elif defined __APPLE__ || defined __linux
 
 			address.resize( INET6_ADDRSTRLEN );
-			in6_addr *haddress = &reinterpret_cast<sockaddr_in6 *>( host_address )->sin6_addr;
+			in6_addr *haddress = &reinterpret_cast<sockaddr_in6 *>( host_address.get( ) )->sin6_addr;
 			if( inet_ntop( AF_INET6, haddress, &address[0], INET6_ADDRSTRLEN ) != nullptr )
 			{
 				address.resize( std::strlen( address.c_str( ) ) );
@@ -316,19 +316,19 @@ std::string IPAddress::ToString( ) const
 
 void IPAddress::SetFamily( IPAddressFamily family )
 {
-	sockaddr *haddress = reinterpret_cast<sockaddr *>( host_address );
+	sockaddr *haddress = reinterpret_cast<sockaddr *>( host_address.get( ) );
 	haddress->sa_family = static_cast<sa_family_t>( family );
 }
 
 IPAddressFamily IPAddress::GetFamily( ) const
 {
-	return IPAddressFamily( reinterpret_cast<sockaddr *>( host_address )->sa_family );
+	return IPAddressFamily( reinterpret_cast<sockaddr *>( host_address.get( ) )->sa_family );
 }
 
 void IPAddress::InitializeAddress( )
 {
-	host_address = new sockaddr_storage;
-	std::memset( host_address, 0, sizeof( sockaddr_storage ) );
+	host_address = std::make_shared<sockaddr_storage>( );
+	std::memset( host_address.get( ), 0, sizeof( sockaddr_storage ) );
 }
 
 bool IPAddress::ResolveString( const std::string &address )
@@ -354,7 +354,7 @@ bool IPAddress::ResolveString( const std::string &address )
 	{
 		// Doesn't call SetAddress because it does byte order stuff and we don't need it.
 		SetFamily( FAMILY_INET );
-		reinterpret_cast<sockaddr_in *>( host_address )->sin_addr.s_addr = addr.s_addr;
+		reinterpret_cast<sockaddr_in *>( host_address.get( ) )->sin_addr.s_addr = addr.s_addr;
 		return true;
 	}
 
@@ -378,7 +378,7 @@ bool IPAddress::ResolveString( const std::string &address )
 	{
 		// Doesn't call SetAddress because it does byte order stuff and we don't need it.
 		SetFamily( FAMILY_INET6 );
-		uint8_t *haddress = reinterpret_cast<sockaddr_in6 *>( host_address )->sin6_addr.s6_addr;
+		uint8_t *haddress = reinterpret_cast<sockaddr_in6 *>( host_address.get( ) )->sin6_addr.s6_addr;
 		std::memcpy( haddress, addr6.s6_addr, 16 );
 		return true;
 	}
@@ -392,7 +392,7 @@ bool IPAddress::ResolveString( const std::string &address )
 	{
 		// Doesn't call SetAddress because it does byte order stuff and we don't need it.
 		SetFamily( FAMILY_INET );
-		sockaddr_in *haddress = reinterpret_cast<sockaddr_in *>( host_address );
+		sockaddr_in *haddress = reinterpret_cast<sockaddr_in *>( host_address.get( ) );
 		sockaddr_in *raddress = reinterpret_cast<sockaddr_in *>( result->ai_addr );
 		haddress->sin_addr.s_addr = raddress->sin_addr.s_addr;
 
@@ -407,7 +407,7 @@ bool IPAddress::ResolveString( const std::string &address )
 	{
 		// Doesn't call SetAddress because it does byte order stuff and we don't need it.
 		SetFamily( FAMILY_INET6 );
-		uint8_t *haddress = reinterpret_cast<sockaddr_in6 *>( host_address )->sin6_addr.s6_addr;
+		uint8_t *haddress = reinterpret_cast<sockaddr_in6 *>( host_address.get( ) )->sin6_addr.s6_addr;
 		uint8_t *raddress = reinterpret_cast<sockaddr_in6 *>( result->ai_addr )->sin6_addr.s6_addr;
 		std::memcpy( haddress, raddress, 16 );
 

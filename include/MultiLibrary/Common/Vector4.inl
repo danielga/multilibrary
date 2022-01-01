@@ -34,8 +34,6 @@
  *
  *************************************************************************/
 
-#include <math.h>
-
 template<typename T>
 Vector4<T>::Vector4( ) :
 	x( static_cast<T>( 0 ) ),
