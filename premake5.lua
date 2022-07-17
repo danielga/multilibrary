@@ -5,6 +5,7 @@ end
 include("./scripts/options.lua")
 include("./scripts/actions.lua")
 include("./scripts/pkg_config.lua")
+include("./scripts/vcpkg.lua")
 
 SOURCE_DIRECTORY = "source"
 INCLUDE_DIRECTORY = "include"
@@ -37,6 +38,7 @@ solution("MultiLibrary")
 		flags("MultiProcessorCompile")
 		defines({"UNICODE", "_UNICODE", "WIN32_LEAN_AND_MEAN", "WINVER=0x0601", "_WIN32_WINNT=0x0601", "_CRT_SECURE_NO_DEPRECATE"})
 		sysincludedirs(THIRDPARTY_DIRECTORY .. "/include")
+		include_vcpkg()
 
 		filter({"system:windows", "platforms:x86"})
 			syslibdirs(THIRDPARTY_DIRECTORY .. "/lib/x86")
