@@ -77,6 +77,15 @@ public:
 	 */
 	Pipe( bool read_inheritable, bool write_inheritable );
 
+	/*!
+	 \brief Create a named pipe with the specified inheritances.
+
+	 \param name Name of the pipe (prepended by "\\.\pipe\" on Windows and used as a path in POSIX)
+	 \param create Boolean indicating whether the named pipe should be created or opened
+	 \param inheritable Should the handle be inheritable
+	 */
+	Pipe( const std::string &name, bool create, bool inheritable );
+
 	Pipe( Pipe &&pipe ) noexcept;
 
 	/*!

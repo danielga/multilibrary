@@ -145,6 +145,58 @@ Pipe::Pipe( bool read_inheritable, bool write_inheritable )
 	write_handle.reset( new Handle( write ) );
 }
 
+Pipe::Pipe( const std::string &name, bool create, bool inheritable )
+{
+	SECURITY_ATTRIBUTES sa;
+	sa.nLength = static_cast<DWORD>( sizeof( SECURITY_ATTRIBUTES ) );
+	sa.bInheritHandle = inheritable ? TRUE : FALSE;
+	sa.lpSecurityDescriptor = nullptr;
+
+	const auto pipe_name = "\\\\.\\pipe\\" + name;
+
+	HANDLE read = nullptr;
+	if( create )
+		read = CreateNamedPipeA(
+			pipe_name.c_str( ),
+			PIPE_ACCESS_DUPLEX,
+			PIPE_TYPE_BYTE | PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES,
+			8192,
+			8192,
+			NMPWAIT_USE_DEFAULT_WAIT,
+			&sa
+		);
+	else
+		read = CreateFileA(
+			pipe_name.c_str( ),
+			GENERIC_READ | GENERIC_WRITE,
+			0,
+			&sa,
+			OPEN_EXISTING,
+			0,
+			nullptr
+		);
+
+	if( read == INVALID_HANDLE_VALUE )
+		throw std::system_error( GetLastError( ), std::system_category( ), "unable to create named pipe" );
+
+	HANDLE cur_proc = GetCurrentProcess( );
+	HANDLE write = nullptr;
+	if( DuplicateHandle(
+		cur_proc,
+		read,
+		cur_proc,
+		&write,
+		0,
+		inheritable ? TRUE : FALSE,
+		DUPLICATE_SAME_ACCESS
+	) == FALSE )
+		throw std::system_error( GetLastError( ), std::system_category( ), "unable to duplicate named pipe handle" );
+
+	read_handle.reset( new Handle( read ) );
+	write_handle.reset( new Handle( write ) );
+}
+
 Pipe::Pipe( Pipe &&pipe ) noexcept :
 	read_handle( std::move( pipe.read_handle ) ),
 	write_handle( std::move( pipe.write_handle ) )
